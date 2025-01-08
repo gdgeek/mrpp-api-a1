@@ -116,69 +116,14 @@ $config = [
                 ],
                 [
                     'class' => 'yii\rest\UrlRule',
-                    'controller' => 'v1/system',
+                    'controller' => 'v1/verse',
                     'pluralize' => false,
-                    'extraPatterns' => [
-                        'GET ready-game' => 'ready-game',
-                        'GET start-game' => 'start-game',
-                    ],
+                   /* 'extraPatterns' => [
+                        'GET open' => 'open',
+                        'GET release' => 'release',
+                    ],*/
                 ],
-                [
-                    'class' => 'yii\rest\UrlRule',
-                    'controller' => 'v1/we-chat',
-                    'pluralize' => false,
-                    'extraPatterns' => [
-                        'POST credit-money' => 'credit-money',
-                        'GET credit-money' => 'credit-money',
-                    ],
-                ],
-                [
-                    'class' => 'yii\rest\UrlRule',
-                    'controller' => 'v1/web',
-                    'pluralize' => false,
-                    'extraPatterns' => [
-                        'GET async-routes' => 'async-routes',
-                    ],
-                ],
-                
-                [
-                    'class' => 'yii\rest\UrlRule',
-                    'controller' => 'v1/game',
-                    'pluralize' => false,
-                    'extraPatterns' => [
-                        'GET device' => 'device',
-                        'POST device' => 'device',
-                        'GET ready' => 'ready',
-                        'POST ready' => 'ready',
-                        'GET start' => 'start',
-                        'POST start' => 'start',
-                        'GET finish' => 'finish',
-                        'POST finish' => 'finish',
-                    ],
-                ],
-                [
-                    'class' => 'yii\rest\UrlRule',
-                    'controller' => 'v1/helper',
-                    'pluralize' => false,
-                    'extraPatterns' => [
-                        'GET print' => 'print',
-                        'GET test' => 'test',
-                    ],
-                ],
-                [
-                    'class' => 'yii\rest\UrlRule',
-                    'controller' => 'v1/manager',
-                    'pluralize' => false,
-                    'extraPatterns' => [
-                        'POST login' => 'login',
-                        'GET login' => 'login',
-                    ],
-                ],
-                [
-                    'class' => 'yii\rest\UrlRule',
-                    'controller' => ['v1/device', 'v1/shop', 'v1/player', 'v1/recode'],
-                    'pluralize' => false,
-                ],
+             
             ],
         ],
         

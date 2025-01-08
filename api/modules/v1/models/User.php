@@ -1,122 +1,18 @@
 <?php
+
 namespace app\modules\v1\models;
-use yii\db\ActiveRecord;
-use yii\web\IdentityInterface;
-use yii\behaviors\TimestampBehavior;
-use yii\db\Expression;
+
 use Yii;
-class User extends \yii\db\ActiveRecord implements IdentityInterface
+
+class User extends \yii\db\ActiveRecord
 {
-    public static function findIdentity($id)
-    {
-        return static::findOne(['id' => $id]);
-    }
-
-    public static function findIdentityByAccessToken($token, $type = null)
-    {
-        $claims = \Yii::$app->jwt->parse($token)->claims();
-        $uid = $claims->get('uid');
-        $user = static::findIdentity($uid);
-        return $user;
-    }
-
-
-   
-    public function getRole(){
-        $role = 'player';
-        $manager = $this->manager;
-        if($manager != null){
-            $role = $manager->type;
-        }
-        if($this->tel=='15000159790' || $this->tel=='15601920021'){
-            $role = 'root';
-        }
-        return $role;
-    }
-    public function getPlayer(){
-       
-        return [
-            'id'=> $this->id,
-            'openId'=> $this->openId,
-            'tel'=> $this->tel,  
-            'recharge'=> $this->recharge,
-            'nickname'=> $this->nickname,
-            'avatar'=> $this->avatar,
-            'points'=> $this->points,
-            'cost'=> $this->cost,
-            'times'=> $this->times,
-            'grade'=> $this->grade,
-            'role'=> $this->role,
-        ];
-    }
-    //人员管理 root
-    //系统管理 admin
-    //shop 管理，店长
-    // 运行系统的人员 staff
-    public function getId()
-    {
-        return $this->id;
-    }
-
-    public function getAuthKey()
-    {
-        $token = PlayerToken::find()->where(['player_id'=>$this->id])->one();
-        if($token == null){
-            $token = PlayerToken::GenerateRefreshToken($user->id);
-        }
-        return  $token->refresh_token;
-    }  
-    
-    public function validateAuthKey($authKey)
-    {
-        return $this->getAuthKey() === $authKey;
-    }
-    
-
-    public function behaviors()
-    {
-        return [
-            [
-                'class' => TimestampBehavior::class,
-                'attributes' => [
-                    \yii\db\ActiveRecord::EVENT_BEFORE_INSERT => ['created_at', 'updated_at'],
-                    \yii\db\ActiveRecord::EVENT_BEFORE_UPDATE => ['updated_at'],
-                ],
-                'value' => new Expression('NOW()'),
-            ]
-        ];
-    }
-    
     /**
      * {@inheritdoc}
      */
     public static function tableName()
     {
-        return 'player';
+        return 'user';
     }
-
-    //生成token
-    public function generateAccessToken($now = null)
-    {
-        
-        if($now == null){
-            $now = new \DateTimeImmutable('now', new \DateTimeZone(\Yii::$app->timeZone));
-        }
-        
-        $token = \Yii::$app->jwt->getBuilder()
-        ->issuedBy(\Yii::$app->request->hostInfo)
-        ->issuedAt($now) // Configures the time that the token was issue (iat claim)
-        ->canOnlyBeUsedAfter($now)
-        ->expiresAt($now->modify('+3 hour')) // Configures the expiration time of the token (exp claim)
-        ->withClaim('uid', $this->id) // Configures a new claim, called "uid"
-        ->getToken(
-            \Yii::$app->jwt->getConfiguration()->signer(),
-            \Yii::$app->jwt->getConfiguration()->signingKey()
-        ); 
-        return (string) $token->toString();
-    }
-    
-        
 
     /**
      * {@inheritdoc}
@@ -124,13 +20,12 @@ class User extends \yii\db\ActiveRecord implements IdentityInterface
     public function rules()
     {
         return [
-            [['tel'], 'required'],
-            [['recharge', 'cost'], 'number'],
-            [['times', 'grade', 'points'], 'integer'],
-            [['created_at', 'updated_at', 'info'], 'safe'],
-            [['tel', 'nickname', 'openId', 'avatar'], 'string', 'max' => 255],
-            [['tel'], 'unique'],
-            [['openId'], 'unique'],
+            [['status', 'created_at', 'updated_at'], 'integer'],
+            [['username', 'password_hash', 'password_reset_token', 'email', 'verification_token', 'access_token', 'wx_openid', 'nickname'], 'string', 'max' => 255],
+            [['auth_key'], 'string', 'max' => 32],
+            [['email'], 'unique'],
+            [['username'], 'unique'],
+            [['password_reset_token'], 'unique'],
         ];
     }
 
@@ -141,41 +36,19 @@ class User extends \yii\db\ActiveRecord implements IdentityInterface
     {
         return [
             'id' => 'ID',
-            'tel' => 'Tel',
-            'nickname' => 'Nickname',
-            'recharge' => 'Recharge',
-            'cost' => 'Cost',
-            'times' => 'Times',
-            'grade' => 'Grade',
-            'points' => 'Points',
-            'created_at' => 'Created At',
-            'updated_at' => 'Updated At',
-            'openId' => 'Openid',
-            'avatar' => 'Avatar',
-            'info' => 'Info',
+            'username' => 'Username',// 用户名
+            'auth_key' => 'Auth Key', // 认证key
+            'password_hash' => 'Password Hash',//密码
+            'password_reset_token' => 'Password Reset Token', //充值密码token
+            'email' => 'Email', //信箱
+            'status' => 'Status', // 状态
+            'created_at' => 'Created At', //创建时间
+            'updated_at' => 'Updated At',//更新时间
+            'verification_token' => 'Verification Token', //验证key
+            'access_token' => 'Access Token', //访问token
+            'wx_openid' => 'Wx Openid', //微信openid  去掉
+            'nickname' => 'Nickname',//昵称
         ];
     }
 
-   /**
-    * Gets query for [[Managers]]. 
-    * 
-    * @return \yii\db\ActiveQuery 
-    */ 
-   public function getManager() 
-   { 
-       return $this->hasOne(Manager::class, ['player_id' => 'id']); 
-   } 
-
-    /**
-     * Gets query for [[Records]].
-     *
-     * @return \yii\db\ActiveQuery
-     */
-    public function getRecords()
-    {
-        return $this->hasMany(Record::class, ['player_id' => 'id']);
-    }
-
-
-    
 }
