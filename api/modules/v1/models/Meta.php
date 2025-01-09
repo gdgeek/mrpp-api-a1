@@ -122,7 +122,7 @@ class Meta extends \yii\db\ActiveRecord
         if($metaCode && $metaCode->code){
             $script = $metaCode->code->$cl;
         }
-
+        return $cl;
         if($cl == 'lua'){
             $substring = "local meta = {}\nlocal index = ''\n";
         }else if($cl == 'js'){
