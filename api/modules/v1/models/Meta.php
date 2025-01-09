@@ -2,7 +2,6 @@
 
 namespace app\modules\v1\models;
 
-//use api\modules\v1\models\Cyber;
 use app\modules\v1\models\File;
 use app\modules\v1\models\MetaQuery;
 use app\modules\v1\models\User;
@@ -122,8 +121,6 @@ class Meta extends \yii\db\ActiveRecord
         }
         if($metaCode && $metaCode->code){
             $script = $metaCode->code->$cl;
-        }else if ($this->cyber && $this->cyber->script) {
-            $script = $this->cyber->script;
         }
 
         if($cl == 'lua'){

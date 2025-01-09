@@ -144,9 +144,8 @@ class Verse extends \yii\db\ActiveRecord
                 }
                 if($verseCode && $verseCode->code){
                     $script = $verseCode->code->$cl;
-                }else if ($this->script) {
-                    $script = $this->script->script;
                 }
+                
                 if($cl == 'lua'){
                     $substring = "local verse = {}\nlocal is_playing = false\n";
                 }else if($cl == 'js'){
@@ -195,15 +194,7 @@ class Verse extends \yii\db\ActiveRecord
             'version' => 'Version',
         ];
     }
-    /**
-    * Gets query for [[VerseCybers]].
-    *
-    * @return \yii\db\ActiveQuery|VerseCyberQuery
-    */
-    public function getVerseCybers()
-    {
-        return $this->hasMany(VerseCyber::className(), ['verse_id' => 'id']);
-    }
+ 
     
     /**
     * Gets query for [[EventLinks]].
