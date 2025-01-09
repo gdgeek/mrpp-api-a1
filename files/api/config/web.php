@@ -114,19 +114,14 @@ $config = [
                     'controller' => 'v1/common',
                     'pluralize' => false,
                     'extraPatterns' => [
-                        'POST sign-in' => 'sign-in',
-                        'POST sign-up' => 'sign-up',
-                        'POST refresh-token' => 'refresh-token',
+                        'GET test' => 'test',
                     ],
                 ],
                 [
                     'class' => 'yii\rest\UrlRule',
                     'controller' => 'v1/verse',
                     'pluralize' => false,
-                   /* 'extraPatterns' => [
-                        'GET open' => 'open',
-                        'GET release' => 'release',
-                    ],*/
+                   
                 ],
              
             ],
