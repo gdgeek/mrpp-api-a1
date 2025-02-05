@@ -64,12 +64,7 @@ $config = [
             'cookieValidationKey' => '1IGWolYN-GxNJpfxx84J24XhP2iFh4GZ',
         ],
         'cache' => [
-            'class' => 'yii\redis\Cache',
-            'redis' => [
-                'hostname' => 'redis',
-                'port' => 6379,
-                'database' => 0,
-            ],
+            'class' => 'yii\caching\FileCache',
         ],
         'helper' => [
             'class' => 'app\components\Helper',
