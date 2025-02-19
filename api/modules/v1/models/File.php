@@ -87,6 +87,16 @@ class File extends \yii\db\ActiveRecord
         };
         return $fields;
     }
+    public function afterFind()
+    {
+        parent::afterFind();
+        if ($this->key && strpos($this->key, '.') === false) {
+            $this->key = $this->md5 . '.' . pathinfo($this->filename, PATHINFO_EXTENSION);
+            $this->save(false); // 保存模型，不进行验证
+        }
+        
+    }
+
     public function behaviors()
     {
         return [
