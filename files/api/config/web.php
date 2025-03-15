@@ -116,7 +116,10 @@ $config = [
                     'class' => 'yii\rest\UrlRule',
                     'controller' => 'v1/verse',
                     'pluralize' => false,
-                   
+                    'extraPatterns' => [
+                        'GET open' => 'open',
+                        'GET release' => 'release',
+                    ],
                 ],
              
             ],
