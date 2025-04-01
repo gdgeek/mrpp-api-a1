@@ -119,6 +119,14 @@ $config = [
                 ],
                 [
                     'class' => 'yii\rest\UrlRule',
+                    'controller' => 'v1/snapshot',
+                    'pluralize' => false,
+                    'extraPatterns' => [
+                        'GET public' => 'public',
+                    ],
+                ],
+                [
+                    'class' => 'yii\rest\UrlRule',
                     'controller' => 'v1/verse',
                     'pluralize' => false,
                     'extraPatterns' => [

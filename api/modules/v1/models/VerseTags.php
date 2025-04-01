@@ -24,7 +24,7 @@ class VerseTags extends \yii\db\ActiveRecord
         return 'verse_tags';
     }
 
-    public  function fields()
+    public function fields()
     {
         return [
             'tags_id'
