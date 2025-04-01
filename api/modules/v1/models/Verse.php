@@ -4,14 +4,6 @@ namespace app\modules\v1\models;
 
 
 
-//use api\modules\a1\models\File;
-//use api\modules\a1\models\Meta;
-//use api\modules\a1\models\Resource;
-//use api\modules\v1\models\User;
-//use app\modules\v1\models\MultilanguageVerse;
-//use app\modules\v1\models\VerseQuery;
-//use api\modules\v1\models\VerseCode;
-
 
 use Yii;
 use yii\behaviors\BlameableBehavior;
@@ -86,30 +78,34 @@ class Verse extends \yii\db\ActiveRecord
             [['updater_id'], 'exist', 'skipOnError' => true, 'targetClass' => User::className(), 'targetAttribute' => ['updater_id' => 'id']],
         ];
     }
+    public function beforeSave($insert)
+    {
+        if (parent::beforeSave($insert)) {
+            if (empty($this->uuid)) {
+                $this->uuid = \Faker\Provider\Uuid::uuid();
+            }
+            if(is_string($this->data)){
+                $data = json_decode($this->data);
+            }
+            
+            return true;
+        }
+        return false;
+    }
     public function extraFields()
     {
         
         
-        $language = Yii::$app->request->get('language');
-        if(!isset($language)){
-            $language = 'en-us';
-        }
-        $context = MultilanguageVerse::find()->where(['verse_id' => $this->id, 'language' => $language])->one();
-        return [
+         return [
             'id',
+            'name',
+            'uuid',
             'metas',
-            'name' => function() use($context){
-                if(isset($context)){
-                    return $context->name;
-                }    
-                return $this->name;
-            },
-            
-            
-            'description' => function() use($context){
-                if(isset($context)){
-                    return $context->description;
-                }    
+            'data',
+            'image',
+            'resources',
+            'description' => function()/* use($context)*/{
+                
                 if(is_string($this->info)){
                     $info = json_decode($this->info, true);
                     
@@ -120,23 +116,6 @@ class Verse extends \yii\db\ActiveRecord
                     return $info['description'];
                 }
                 return;
-            },
-            'uuid' => function () {
-                if (empty($this->uuid)) {
-                    $this->uuid = \Faker\Provider\Uuid::uuid();
-                    $this->save();
-                }
-                return $this->uuid;
-            },
-            'data' => function () {
-                if (!is_string($this->data) && !is_null($this->data)) {
-                    return json_encode($this->data);
-                }
-                return $this->data;
-                
-            },
-            'image' => function () {
-                return $this->image;
             },
             'code' => function () {
                 $verseCode = $this->verseCode;
@@ -151,7 +130,7 @@ class Verse extends \yii\db\ActiveRecord
                     $script = $verseCode->code->$cl;
                 }
                
-                if(isset($script)){
+                if(isset($script)){ 
                     if (strpos($script, $substring) !== false) {
                         return $script;
                     } else {
@@ -161,8 +140,6 @@ class Verse extends \yii\db\ActiveRecord
                     return $substring;
                 }
             },
-            'resources',
-            'image'
         ];
     }
     public function getVerseCode()
@@ -171,7 +148,6 @@ class Verse extends \yii\db\ActiveRecord
     }
     public function fields()
     {
-        
         return [];
     }
     /**
