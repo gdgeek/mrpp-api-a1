@@ -119,6 +119,7 @@ $config = [
                     'extraPatterns' => [
                         'GET open' => 'open',
                         'GET release' => 'release',
+                        'GET public' => 'public',
                     ],
                 ],
              
