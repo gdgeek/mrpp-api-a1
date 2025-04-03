@@ -130,35 +130,31 @@ class Snapshot extends \yii\db\ActiveRecord
 
     public function fields()
     {
-     
+
         return [];
     }
     public function extraFields()
     {
-        return ['code', 'id', 'name', 'data', 'description', 'metas', 'resources', 'uuid', 'image'];
+
+        return [
+            'id',
+            'name' => function () {
+                return $this->verse->name;
+            },
+            'description' => function () {
+                return $this->verse->description;
+            },
+            'image' => function () {
+                return $this->verse->getImage()->one();
+            },
+            'uuid',
+            'verse_id',
+            'code',
+            'data',
+            'metas',
+            'resources',
+        ];
     }
 
-    static function CreateById($verse_id)
-    {
-        $verse = \api\modules\private\models\Verse::findOne($verse_id);
-        if (!$verse) {
-            throw new \yii\web\NotFoundHttpException('Verse not found');
-        }
-        $data = $verse->toArray([], ['code', 'id', 'name', 'data', 'description', 'metas', 'resources', 'uuid', 'image']);
-        $snapshot = Snapshot::find()->where(['verse_id' => $data['id']])->one();
-        if (!$snapshot) {
-            $snapshot = new Snapshot();
-        }
-        $snapshot->verse_id = $data['id'];
-        $snapshot->name = $data['name'];
-        $snapshot->description = $data['description'];
-        $snapshot->uuid = $data['uuid'];
-        $snapshot->code = $data['code'];
-        $snapshot->data = $data['data'];
-        $snapshot->metas = $data['metas'];
-        $snapshot->resources = $data['resources'];
-        $snapshot->image = $data['image'];
-        $snapshot->author_id = $snapshot->verse->author_id;
-        return $snapshot;
-    }
+  
 }

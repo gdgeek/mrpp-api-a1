@@ -2,6 +2,7 @@
 namespace app\modules\v1\controllers;
 use app\modules\v1\models\SnapshotSearch;
 use yii\web\BadRequestHttpException;
+use app\modules\v1\models\Snapshot;
 
 
 use yii\helpers\HtmlPurifier;
@@ -28,7 +29,25 @@ class SnapshotController extends ActiveController
         //  unset($actions['view']);
         return $actions;
     }
-    
+
+    public function actionByUuid($uuid){
+        $model = Snapshot::find()
+            ->where(['uuid' => $uuid])
+            ->one();
+        if ($model === null) {
+            throw new BadRequestHttpException('Snapshot not found.');
+        }
+        return $model;
+    }
+    public function actionByVerseId($verse_id){
+        $model = Snapshot::find()
+            ->where(['verse_id' => $verse_id])
+            ->one();
+        if ($model === null) {
+            throw new BadRequestHttpException('Snapshot not found.');
+        }
+        return $model;
+    }
 
 
     public function actionIndex()

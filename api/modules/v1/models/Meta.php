@@ -113,6 +113,9 @@ class Meta extends \yii\db\ActiveRecord
             'code'
         ];
     }
+
+
+    
     public function getCode(){
         $metaCode = $this->metaCode;
         $cl = Yii::$app->request->get('cl');

@@ -123,6 +123,8 @@ $config = [
                     'pluralize' => false,
                     'extraPatterns' => [
                         'GET public' => 'public',
+                        'GET by-uuid' => 'by-uuid',
+                        'GET by-verse-id' => 'by-verse-id',
                     ],
                 ],
                 [
