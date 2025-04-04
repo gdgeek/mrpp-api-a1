@@ -17,7 +17,7 @@ class SnapshotSearch extends Snapshot
     public function rules()
     {
         return [
-            [['id', 'verse_id', 'author_id', 'created_by'], 'integer'],
+            [['id', 'verse_id', 'created_by'], 'integer'],
             [['name', 'description', 'uuid', 'code', 'data', 'image', 'metas', 'resources', 'created_at', 'type'], 'safe'],
         ];
     }
@@ -50,6 +50,7 @@ class SnapshotSearch extends Snapshot
 
         $this->load($params);
 
+
         if (!$this->validate()) {
             // uncomment the following line if you do not want to return any records when validation fails
             // $query->where('0=1');
@@ -61,7 +62,6 @@ class SnapshotSearch extends Snapshot
             'id' => $this->id,
             'verse_id' => $this->verse_id,
             'created_at' => $this->created_at,
-            // 'author_id' => $this->author_id,
             'created_by' => $this->created_by,
         ]);
 
