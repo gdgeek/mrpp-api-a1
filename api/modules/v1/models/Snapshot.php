@@ -65,10 +65,10 @@ class Snapshot extends \yii\db\ActiveRecord
     {
         return [
             [['verse_id'], 'required'],
-            [['verse_id', 'author_id', 'created_by'], 'integer'],
+            [['verse_id',/* 'author_id', */ 'created_by'], 'integer'],
             [['code'], 'string'],
-            [['data', 'image', 'metas', 'resources', 'created_at'], 'safe'],
-            [['name', 'description', 'uuid', 'type'], 'string', 'max' => 255],
+            [['data',/* 'image',*/ 'metas', 'resources', 'created_at'], 'safe'],
+            [[/*'name', 'description',*/ 'uuid'/*, 'type'*/], 'string', 'max' => 255],
             [['author_id'], 'exist', 'skipOnError' => true, 'targetClass' => User::className(), 'targetAttribute' => ['author_id' => 'id']],
             [['created_by'], 'exist', 'skipOnError' => true, 'targetClass' => User::className(), 'targetAttribute' => ['created_by' => 'id']],
             [['verse_id'], 'exist', 'skipOnError' => true, 'targetClass' => Verse::className(), 'targetAttribute' => ['verse_id' => 'id']],
@@ -83,18 +83,18 @@ class Snapshot extends \yii\db\ActiveRecord
         return [
             'id' => Yii::t('app', 'ID'),
             'verse_id' => Yii::t('app', 'Verse ID'),
-            'name' => Yii::t('app', 'Name'),
-            'description' => Yii::t('app', 'Description'),
+            //'name' => Yii::t('app', 'Name'),
+            // 'description' => Yii::t('app', 'Description'),
             'uuid' => Yii::t('app', 'Uuid'),
             'code' => Yii::t('app', 'Code'),
             'data' => Yii::t('app', 'Data'),
-            'image' => Yii::t('app', 'Image'),
+            // 'image' => Yii::t('app', 'Image'),
             'metas' => Yii::t('app', 'Metas'),
             'resources' => Yii::t('app', 'Resources'),
             'created_at' => Yii::t('app', 'Created At'),
-            'author_id' => Yii::t('app', 'Author ID'),
+            // 'author_id' => Yii::t('app', 'Author ID'),
             'created_by' => Yii::t('app', 'Created By'),
-            'type' => Yii::t('app', 'Type'),
+            // 'type' => Yii::t('app', 'Type'),
         ];
     }
 
@@ -102,12 +102,12 @@ class Snapshot extends \yii\db\ActiveRecord
      * Gets query for [[Author]].
      *
      * @return \yii\db\ActiveQuery
-     */
+    
     public function getAuthor()
     {
         return $this->hasOne(User::className(), ['id' => 'author_id']);
     }
-
+ */
     /**
      * Gets query for [[CreatedBy]].
      *
@@ -130,7 +130,6 @@ class Snapshot extends \yii\db\ActiveRecord
 
     public function fields()
     {
-
         return [];
     }
     public function extraFields()
@@ -147,6 +146,9 @@ class Snapshot extends \yii\db\ActiveRecord
             'image' => function () {
                 return $this->verse->getImage()->one();
             },
+            'author_id' => function () {
+                return $this->verse->author_id;
+            },
             'uuid',
             'verse_id',
             'code',
@@ -156,5 +158,5 @@ class Snapshot extends \yii\db\ActiveRecord
         ];
     }
 
-  
+
 }
