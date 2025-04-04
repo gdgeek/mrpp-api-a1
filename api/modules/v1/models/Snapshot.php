@@ -22,7 +22,7 @@ use yii\db\Expression;
  * @property string|null $metas
  * @property string|null $resources
  * @property string|null $created_at
- * @property int|null $author_id
+ //* @property int|null $author_id
  * @property int|null $created_by
  * @property string|null $type
  *
