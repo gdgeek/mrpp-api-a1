@@ -69,7 +69,7 @@ class Snapshot extends \yii\db\ActiveRecord
             [['code'], 'string'],
             [['data',/* 'image',*/ 'metas', 'resources', 'created_at'], 'safe'],
             [[/*'name', 'description',*/ 'uuid'/*, 'type'*/], 'string', 'max' => 255],
-            [['author_id'], 'exist', 'skipOnError' => true, 'targetClass' => User::className(), 'targetAttribute' => ['author_id' => 'id']],
+          //  [['author_id'], 'exist', 'skipOnError' => true, 'targetClass' => User::className(), 'targetAttribute' => ['author_id' => 'id']],
             [['created_by'], 'exist', 'skipOnError' => true, 'targetClass' => User::className(), 'targetAttribute' => ['created_by' => 'id']],
             [['verse_id'], 'exist', 'skipOnError' => true, 'targetClass' => Verse::className(), 'targetAttribute' => ['verse_id' => 'id']],
         ];
