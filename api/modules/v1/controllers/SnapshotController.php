@@ -30,7 +30,8 @@ class SnapshotController extends ActiveController
         return $actions;
     }
 
-    public function actionByUuid($uuid){
+    public function actionByUuid($uuid)
+    {
         $model = Snapshot::find()
             ->where(['uuid' => $uuid])
             ->one();
@@ -39,7 +40,8 @@ class SnapshotController extends ActiveController
         }
         return $model;
     }
-    public function actionByVerseId($verse_id){
+    public function actionByVerseId($verse_id)
+    {
         $model = Snapshot::find()
             ->where(['verse_id' => $verse_id])
             ->one();
@@ -55,7 +57,7 @@ class SnapshotController extends ActiveController
 
         $searchModel = new SnapshotSearch();
         $dataProvider = $searchModel->search(Yii::$app->request->queryParams);
-       // $dataProvider->query->andWhere(['author_id' => Yii::$app->user->id]);
+        // $dataProvider->query->andWhere(['author_id' => Yii::$app->user->id]);
 
 
         $tags = Yii::$app->request->get('tags');
@@ -66,7 +68,7 @@ class SnapshotController extends ActiveController
             if (isset($tagsArray) && !empty($tagsArray)) {
                 // 假设有一个 verse_tags 表，包含 verse_id 和 tag_id 字段
                 $dataProvider->query->innerJoin('verse_tags', 'verse_tags.verse_id  = snapshot.verse_id')
-                   // ->innerJoin('verse_tags', 'verse_tags.verse_id = verse.id')
+                    // ->innerJoin('verse_tags', 'verse_tags.verse_id = verse.id')
                     ->andWhere(['in', 'verse_tags.tags_id', $tagsArray])
                     ->groupBy('verse.id'); // 避免重复结果
             }
@@ -80,9 +82,8 @@ class SnapshotController extends ActiveController
         $dataProvider = $searchModel->search(Yii::$app->request->queryParams);
 
         // 合并查询：直接在主查询中添加标签条件
-        $dataProvider->query->innerJoin('verse_tags', 'verse_tags.verse_id = snapshot.verse_id')
-           // ->innerJoin('verse_tags', 'verse_tags.verse_id = verse.id')
-            ->innerJoin('tags', 'tags.id = verse_tags.tags_id')
+        $dataProvider->query->innerJoin('verse_tags AS vt1', 'vt1.verse_id = snapshot.verse_id')
+            ->innerJoin('tags', 'tags.id = vt1.tags_id')
             ->andWhere(['tags.key' => 'public']);
 
         // 处理额外的标签过滤
@@ -92,14 +93,13 @@ class SnapshotController extends ActiveController
             $tagsArray = array_map('intval', explode(',', $tags));
             if (isset($tagsArray) && !empty($tagsArray)) {
                 // 假设有一个 verse_tags 表，包含 verse_id 和 tag_id 字段
-                $dataProvider->query->innerJoin('verse_tags', 'verse_tags.verse_id = snapshot.verse_id')
-                //    ->innerJoin('verse_tags', 'verse_tags.verse_id = verse.id')
-                    ->andWhere(['in', 'verse_tags.tags_id', $tagsArray])
-                    ->groupBy('verse.id'); // 避免重复结果
+                $dataProvider->query->innerJoin('verse_tags AS vt2', 'vt2.verse_id = snapshot.verse_id')
+                    ->andWhere(['in', 'vt2.tags_id', $tagsArray])
+                    ->groupBy('snapshot.id'); // 这里推测分组字段为snapshot.id，根据实际情况调整
             }
         }
 
         return $dataProvider;
     }
-    
+
 }
