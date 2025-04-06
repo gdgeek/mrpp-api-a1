@@ -36,6 +36,12 @@ $config = [
         ],
     ],
     'components' => [
+        'redis' => [
+            'class' => 'yii\redis\Connection',
+            'hostname' => getenv('REDIS_HOST'),
+            'port' => getenv('REDIS_PORT'),
+            'database' => getenv('REDIS_DB'),
+        ],
         'jwt' => [
             'class' => \bizley\jwt\Jwt::class,
             'signer' => \bizley\jwt\Jwt::HS256,
@@ -110,6 +116,15 @@ $config = [
                     'pluralize' => false,
                     'extraPatterns' => [
                         'GET test' => 'test',
+                    ],
+                ],
+                [
+                    'class' => 'yii\rest\UrlRule',
+                    'controller' => 'v1/auth',
+                    'pluralize' => false,
+                    'extraPatterns' => [
+                        'POST login' => 'login',
+                        'POST refresh' => 'refresh',
                     ],
                 ],
                 [

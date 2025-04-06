@@ -1,36 +1,65 @@
 <?php
 namespace app\modules\v1\controllers;
-use Yii;
-use yii\rest\Controller;
-use app\modules\v1\models\Player;
-use bizley\jwt\JwtHttpBearerAuth;
+
+
+
+use yii\web\BadRequestHttpException;
 use app\modules\v1\models\User;
-use yii\filters\auth\CompositeAuth;
-use app\modules\v1\helper\PlayerFingerprintAuth;
+use Yii;
 
-//PlayerToken
-use  app\modules\v1\models\PlayerToken;
-
-class AuthController extends Controller
+class AuthController extends \yii\rest\Controller
 {
 
-    public function behaviors()
-    {
-      
-        $behaviors = parent::behaviors();
-        /*
-         //如果 action 不是 test
-        if(Yii::$app->controller->action->id != 'test'
-        && Yii::$app->controller->action->id != 'refresh-token'
-        ){
-          $behaviors['authenticator'] = [
-              'class' => PlayerFingerprintAuth::className(),
-          ];
-        }*/
-        return $behaviors;
-    }
-    
-    public function actionLogin(){
-        
-    }
+
+  public function behaviors()
+  {
+
+    $behaviors = parent::behaviors();
+
+    return $behaviors;
   }
+  public function actionRefresh()
+  {
+
+    $refreshToken = Yii::$app->request->post("refreshToken");
+    if (!$refreshToken) {
+      throw new BadRequestHttpException("refreshToken is required");
+    }
+    $user = User::findByRefreshToken($refreshToken);
+    if (!$user) {
+      throw new BadRequestHttpException("no user");
+    }
+    //$user->generateAuthKey();
+    if ($user->validate()) {
+      $user->save();
+    } else {
+      throw new BadRequestHttpException("save error");
+    }
+    return ['success' => true, 'message' => "refresh", 'token' => $user->token()];
+
+  }
+  public function actionLogin()
+  {
+
+    $username = Yii::$app->request->post("username");
+    if (!$username) {
+      throw new BadRequestHttpException("username is required");
+    }
+    $password = Yii::$app->request->post("password");
+    if (!$password) {
+      throw new BadRequestHttpException("password is required");
+    }
+
+    $user = User::findByUsername($username);
+    if (!$user) {
+      throw new BadRequestHttpException("no user");
+    }
+    if (!$user->validatePassword($password)) {
+      throw new BadRequestHttpException("wrong password");
+    }
+
+
+    return ['success' => true, 'message' => "login", 'token' => $user->token()];
+  }
+
+}
