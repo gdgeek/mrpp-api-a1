@@ -35,7 +35,7 @@ class AuthController extends \yii\rest\Controller
     } else {
       throw new BadRequestHttpException("save error");
     }
-    return ['success' => true, 'message' => "refresh", 'token' => $user->token()];
+    return ['success' => true, 'message' => "refresh", 'nickname'=>$user->nickname, 'token' => $user->token()];
 
   }
   public function actionLogin()
@@ -59,7 +59,7 @@ class AuthController extends \yii\rest\Controller
     }
 
 
-    return ['success' => true, 'message' => "login", 'token' => $user->token()];
+    return ['success' => true, 'message' => "login", 'nickname'=>$user->nickname, 'token' => $user->token()];
   }
 
 }

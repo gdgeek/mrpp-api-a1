@@ -44,6 +44,21 @@ class User extends \yii\db\ActiveRecord implements IdentityInterface
         return $this->authKey === $authKey;
     }
 
+    public static function findByRefreshToken($refreshToken)
+    {
+
+        $token = RefreshToken::find()->where(['key' => $refreshToken])->one();
+
+        if (!$token) {
+            throw new \yii\web\UnauthorizedHttpException('Refresh token is invalid.');
+        }
+        $user = static::findIdentity($token->user_id);
+        if (!$user) {
+            throw new \yii\web\UnauthorizedHttpException('User is not found.');
+        }
+        return $user;
+    }
+
     /**
      * {@inheritdoc}
      */
