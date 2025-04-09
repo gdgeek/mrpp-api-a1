@@ -14,7 +14,7 @@ class User extends \yii\db\ActiveRecord implements IdentityInterface
     {
         return 'user';
     }
-
+    public $password;
     /**
      * {@inheritdoc}
      */
@@ -30,6 +30,7 @@ class User extends \yii\db\ActiveRecord implements IdentityInterface
             ['password', 'match', 'pattern' => '/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{6,}$/i', 'message' => 'Password must contain at least one lowercase letter, one uppercase letter, one digit, and one special character.'],
           
         ];
+        return $rules;
     }
     public function getId()
     {
