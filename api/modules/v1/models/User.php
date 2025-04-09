@@ -2,9 +2,10 @@
 
 namespace app\modules\v1\models;
 
+use yii\web\IdentityInterface;
 use Yii;
 
-class User extends \yii\db\ActiveRecord
+class User extends \yii\db\ActiveRecord implements IdentityInterface
 {
     /**
      * {@inheritdoc}
@@ -29,6 +30,18 @@ class User extends \yii\db\ActiveRecord
             ['password', 'match', 'pattern' => '/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{6,}$/i', 'message' => 'Password must contain at least one lowercase letter, one uppercase letter, one digit, and one special character.'],
           
         ];
+    }
+    public function getId()
+    {
+        return $this->id;
+    }
+    public function getAuthKey()
+    {
+        return $this->auth_key;
+    }
+    public function validateAuthKey($authKey)
+    {
+        return $this->authKey === $authKey;
     }
 
     /**

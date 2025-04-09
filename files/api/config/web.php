@@ -6,19 +6,19 @@ $db = require __DIR__ . '/db.php';
 $config = [
     'id' => 'restful',
     'basePath' => dirname(__DIR__),
-    'timeZone' => 'Asia/Shanghai', 
+    'timeZone' => 'Asia/Shanghai',
     'bootstrap' => ['log'],
     'controllerNamespace' => 'app\controllers',
     'aliases' => [
         '@bower' => '@vendor/bower-asset',
-        '@npm'   => '@vendor/npm-asset',
+        '@npm' => '@vendor/npm-asset',
     ],
     'modules' => [
         'v1' => [
             'class' => 'app\modules\v1\Module',
         ],
     ],
-    
+
     'as cors' => [
         'class' => \yii\filters\Cors::className(),
         'cors' => [
@@ -46,11 +46,11 @@ $config = [
             'class' => \bizley\jwt\Jwt::class,
             'signer' => \bizley\jwt\Jwt::HS256,
             'signingKey' => [
-                'key' =>  getenv('JWT_KEY'), // path to your PRIVATE key, you can start the path with @ to indicate this is a Yii alias
+                'key' => getenv('JWT_KEY'), // path to your PRIVATE key, you can start the path with @ to indicate this is a Yii alias
                 'passphrase' => '', // omit it if you are not adding any passphrase
                 'method' => \bizley\jwt\Jwt::METHOD_FILE,
             ],
-            'validationConstraints'=> static function (\bizley\jwt\Jwt $jwt) {
+            'validationConstraints' => static function (\bizley\jwt\Jwt $jwt) {
                 $config = $jwt->getConfiguration();
                 return [
                     new \Lcobucci\JWT\Validation\Constraint\SignedWith($config->signer(), $config->verificationKey()),
@@ -98,13 +98,13 @@ $config = [
             ],
         ],
         'db' => $db,
-        
+
         'urlManager' => [
             'enablePrettyUrl' => true,
             'showScriptName' => false,
             'enableStrictParsing' => true,
             'rules' => [
-                
+
                 [
                     'pattern' => 'apple-app-site-association',
                     'route' => 'site/apple-app-site-association',
@@ -116,6 +116,28 @@ $config = [
                     'pluralize' => false,
                     'extraPatterns' => [
                         'GET test' => 'test',
+                    ],
+                ],
+                [
+                    'class' => 'yii\rest\UrlRule',
+                    'controller' => 'v1/private',
+                    'pluralize' => false,
+                    'extraPatterns' => [
+                        'GET by-uuid' => 'by-uuid',
+                        'GET by-verse-id' => 'by-verse-id',
+                        'GET by-id' => 'by-id',
+                        'GET list' => 'list',
+                    ],
+                ],
+                [
+                    'class' => 'yii\rest\UrlRule',
+                    'controller' => 'v1/public',
+                    'pluralize' => false,
+                    'extraPatterns' => [
+                        'GET by-uuid' => 'by-uuid',
+                        'GET by-verse-id' => 'by-verse-id',
+                        'GET by-id' => 'by-id',
+                        'GET list' => 'list',
                     ],
                 ],
                 [
@@ -152,10 +174,10 @@ $config = [
                         'GET public' => 'public',
                     ],
                 ],
-             
+
             ],
         ],
-        
+
     ],
     'params' => $params,
 ];
@@ -184,7 +206,7 @@ if (YII_ENV_DEV) {
         // uncomment the following to add your IP if you are not connecting from localhost.
         //'allowedIPs' => ['127.0.0.1', '::1'],
     ];
-    
+
     $config['bootstrap'][] = 'gii';
     $config['modules']['gii'] = [
         'class' => 'yii\gii\Module',
