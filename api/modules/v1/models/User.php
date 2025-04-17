@@ -47,6 +47,7 @@ class User extends \yii\db\ActiveRecord implements IdentityInterface
 
     public static function findByRefreshToken($refreshToken)
     {
+     
 
         $token = RefreshToken::find()->where(['key' => $refreshToken])->one();
 
