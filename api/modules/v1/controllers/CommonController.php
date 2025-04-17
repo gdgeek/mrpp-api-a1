@@ -27,4 +27,17 @@ class CommonController extends Controller
         Yii::info($info, __METHOD__);
         return $info;
     }
+
+
+    public function actionWatermark(){
+
+        return [
+            
+            'success' => true,
+            'message' => 'test message',
+            'data' => [
+                'show' => false,
+            ]
+        ];
+    }
   }

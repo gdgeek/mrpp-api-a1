@@ -113,9 +113,10 @@ $config = [
                 [
                     'class' => 'yii\rest\UrlRule',
                     'controller' => 'v1/common',
-                    'pluralize' => false,
+                    'pluralize' => false,   
                     'extraPatterns' => [
                         'GET test' => 'test',
+                        'GET watermark' => 'watermark',
                     ],
                 ],
                 [
