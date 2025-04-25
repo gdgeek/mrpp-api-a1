@@ -30,39 +30,51 @@ class CommonController extends Controller
         Yii::info($info, __METHOD__);
         return $info;
     }
-    private function getUserData(){
-        
-        try{
-            $refreshToken = Yii::$app->request->post("refreshToken");
-            if (!$refreshToken) {
-                return null;
-            }
-            $user = User::findByRefreshToken($refreshToken);
-            if (!$user) {
-                return null;
-            }
-            return  [
-                'nickname' => $user->nickname,
-                'token' => $user->token(),
-            ];
-        }catch (\Exception $e){
-           // Yii::error($e->getMessage(), __METHOD__);
-            return null;
-        }
+    private function getUserData()
+    {
 
-       
-      
+
+        $refreshToken = Yii::$app->request->post("refreshToken");
+        if (!$refreshToken) {
+            throw new BadRequestHttpException('Refresh token is required.');
+        }
+        $user = User::findByRefreshToken($refreshToken);
+        if (!$user) {
+            throw new BadRequestHttpException('User not found.');
+        }
+        return [
+            'nickname' => $user->nickname,
+            'token' => $user->token(),
+        ];
+
+
+
+
     }
     public function actionReport()
     {
-        return [
-            'success' => true,
-            'message' => "report success",
-            'user' => $this->getUserData(),
-            'data' => [
-                'watermark' => false,
-            ]
-        ];
+        try {
+            $user = $this->getUserData();
+            return [
+                'success' => true,
+                'message' => "report success",
+                'user' => $this->getUserData(),
+                'data' => [
+                    'watermark' => false,
+                ]
+            ];
+        } catch (\Exception $e) {
+
+            return [
+                'success' => false,
+                'message' => $e->getMessage(),
+                'user' => null,
+                'data' => [
+                    'watermark' => false,
+                ]
+            ];
+        }
+
 
 
     }
