@@ -117,6 +117,7 @@ $config = [
                     'extraPatterns' => [
                         'GET test' => 'test',
                         'GET watermark' => 'watermark',
+                        'GET report' => 'report',
                     ],
                 ],
                 [
