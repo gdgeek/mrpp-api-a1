@@ -31,18 +31,27 @@ class CommonController extends Controller
         return $info;
     }
     private function getUserData(){
-        $refreshToken = Yii::$app->request->post("refreshToken");
-        if (!$refreshToken) {
+        
+        try{
+            $refreshToken = Yii::$app->request->post("refreshToken");
+            if (!$refreshToken) {
+                return null;
+            }
+            $user = User::findByRefreshToken($refreshToken);
+            if (!$user) {
+                return null;
+            }
+            return  [
+                'nickname' => $user->nickname,
+                'token' => $user->token(),
+            ];
+        }catch (\Exception $e){
+           // Yii::error($e->getMessage(), __METHOD__);
             return null;
         }
-        $user = User::findByRefreshToken($refreshToken);
-        if (!$user) {
-            return null;
-        }
-        return  [
-            'nickname' => $user->nickname,
-            'token' => $user->token(),
-        ];
+
+       
+      
     }
     public function actionReport()
     {
