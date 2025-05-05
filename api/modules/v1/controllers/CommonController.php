@@ -79,15 +79,19 @@ class CommonController extends Controller
 
     }
 
-    public function actionWatermark()
-    {
+    
 
+    public function actionVerify()
+    {
+        $post = Yii::$app->request->post();
+        //return $post;
         return [
 
             'success' => true,
             'message' => 'test message',
             'data' => [
-                'show' => false,
+                'watermark' => false,
+                'shutdown' => false
             ]
         ];
     }

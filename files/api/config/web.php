@@ -116,8 +116,8 @@ $config = [
                     'pluralize' => false,   
                     'extraPatterns' => [
                         'GET test' => 'test',
-                        'GET watermark' => 'watermark',
-                        'POST report' => 'report',
+                        'POST verify' => 'verify',
+                      //  'POST report' => 'report',
                     ],
                 ],
                 [
