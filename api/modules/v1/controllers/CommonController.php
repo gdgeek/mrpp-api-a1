@@ -74,9 +74,6 @@ class CommonController extends Controller
                 ]
             ];
         }
-
-
-
     }
 
     
@@ -86,7 +83,6 @@ class CommonController extends Controller
         $post = Yii::$app->request->post();
         //return $post;
         return [
-
             'success' => true,
             'message' => 'test message',
             'data' => [
