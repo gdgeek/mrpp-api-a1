@@ -77,7 +77,9 @@ class PrivateController extends Controller
     public function actionList()
     {
         $searchModel = new SnapshotSearch();
-        $dataProvider = $searchModel->search(Yii::$app->request->queryParams);
+
+        $papeSize = Yii::$app->request->get('pageSize', 15);
+        $dataProvider = $searchModel->search(Yii::$app->request->queryParams, $papeSize);
 
         $dataProvider->query->innerJoin('verse AS v1', 'v1.id = snapshot.verse_id')
             ->andWhere(['in', 'v1.author_id', Yii::$app->user->id]);
