@@ -70,7 +70,13 @@ $config = [
             'cookieValidationKey' => '1IGWolYN-GxNJpfxx84J24XhP2iFh4GZ',
         ],
         'cache' => [
-            'class' => 'yii\caching\FileCache',
+            //  'class' => 'yii\caching\FileCache',
+            'class' => 'yii\redis\Cache',
+            'redis' => [
+                'hostname' => getenv('REDIS_HOST'),
+                'port' => getenv('REDIS_PORT'),
+                'database' => getenv('REDIS_DB'),
+            ]
         ],
         'helper' => [
             'class' => 'app\components\Helper',

@@ -38,7 +38,7 @@ class SnapshotSearch extends Snapshot
      *
      * @return ActiveDataProvider
      */
-    public function search($params)
+    public function search($params, $pageSize = 15)
     {
         $query = Snapshot::find();
 
@@ -46,6 +46,9 @@ class SnapshotSearch extends Snapshot
 
         $dataProvider = new ActiveDataProvider([
             'query' => $query,
+            'pagination' => [
+                'pageSize' => $pageSize,
+            ],
         ]);
 
         $this->load($params);

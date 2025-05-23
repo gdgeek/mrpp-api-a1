@@ -74,7 +74,12 @@ class PublicController extends Controller
     public function actionList()
     {
         $searchModel = new SnapshotSearch();
-        $dataProvider = $searchModel->search(Yii::$app->request->queryParams);
+
+        $papeSize = Yii::$app->request->get('pageSize', 15);
+        
+        $dataProvider = $searchModel->search(Yii::$app->request->queryParams, $papeSize);
+
+
 
         $dataProvider->query->innerJoin('verse_tags AS vt1', 'vt1.verse_id = snapshot.verse_id')
             ->innerJoin('tags', 'tags.id = vt1.tags_id')
