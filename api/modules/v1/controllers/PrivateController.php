@@ -78,7 +78,7 @@ class PrivateController extends Controller
     {
         $searchModel = new SnapshotSearch();
 
-        $papeSize = Yii::$app->request->get('pageSize', 15);
+        $papeSize = Yii::$app->request->get('pageSize', defaultValue: 15);
         $dataProvider = $searchModel->search(Yii::$app->request->queryParams, $papeSize);
 
         $dataProvider->query->innerJoin('verse AS v1', 'v1.id = snapshot.verse_id')
