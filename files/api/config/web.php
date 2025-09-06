@@ -140,6 +140,14 @@ $config = [
                 ],
                 [
                     'class' => 'yii\rest\UrlRule',
+                    'controller' => 'v1/checkin',
+                    'pluralize' => false,
+                    'extraPatterns' => [
+                        'GET list' => 'list',
+                    ],
+                ],
+                [
+                    'class' => 'yii\rest\UrlRule',
                     'controller' => 'v1/public',
                     'pluralize' => false,
                     'extraPatterns' => [
