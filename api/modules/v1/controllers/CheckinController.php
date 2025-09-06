@@ -36,8 +36,12 @@ class CheckinController extends \yii\rest\Controller
             if (isset($tagsArray) && !empty($tagsArray)) {
                 // 使用 ActiveQuery 实例，无需强制转换
                 $query = $dataProvider->query;
-
+                //链接tag表进行过滤。tag表的key为checkin,通过verse_tags链接
                 $query->innerJoin('verse_tags', 'verse_tags.verse_id  = snapshot.verse_id')
+                    ->innerJoin('tags', 'tags.id = verse_tags.tags_id')
+                    ->andWhere(['tags.key' => 'checkin'])->groupBy('verse.id');
+                
+               /* $query->innerJoin('verse_tags', 'verse_tags.verse_id  = snapshot.verse_id')
                     ->andWhere(['in', 'verse_tags.tags_id', $tagsArray])
                     ->groupBy('verse.id'); // 避免重复结果
             }
