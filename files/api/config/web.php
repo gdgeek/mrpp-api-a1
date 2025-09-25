@@ -173,6 +173,14 @@ $config = [
                 ],
                 [
                     'class' => 'yii\rest\UrlRule',
+                    'controller' => 'v1/phototype',
+                    'pluralize' => false,
+                    'extraPatterns' => [
+                        'GET info' => 'info',
+                    ],
+                ],
+                [
+                    'class' => 'yii\rest\UrlRule',
                     'controller' => 'v1/snapshot',
                     'pluralize' => false,
                     'extraPatterns' => [
