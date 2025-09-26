@@ -5,9 +5,9 @@ use yii\rest\ActiveController;
 use yii\web\BadRequestHttpException;
 use app\modules\v1\models\Phototype;
 
-class PhototypeController extends ActiveController
+use yii\rest\Controller;
+class PhototypeController extends Controller
 {
-    public $modelClass = 'app\modules\v1\models\Phototype';
     
     public function behaviors()
     {
