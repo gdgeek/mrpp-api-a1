@@ -20,10 +20,8 @@ class PhototypeController extends ActiveController
     public function actionInfo(string $type)
     {
         $model = Phototype::find()->where(['type' => $type])->one();
-
-        
         if($model){
-            return $model->toArray(['id'],['resource']);
+            return $model->toArray(['id','data'],['resource']);
         }
         throw new BadRequestHttpException('model not found.'); 
      
