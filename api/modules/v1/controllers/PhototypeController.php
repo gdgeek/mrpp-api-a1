@@ -21,7 +21,7 @@ class PhototypeController extends Controller
     {
         $model = Phototype::find()->where(['type' => $type])->one();
         if($model){
-            return $model->toArray(['id','data'],['resource']);
+            return $model->toArray(['id','data', 'title'],['resource']);
         }
         throw new BadRequestHttpException('model not found.'); 
      
