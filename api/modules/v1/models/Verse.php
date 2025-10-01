@@ -26,6 +26,7 @@ use yii\db\Expression;
 * @property string|null $data
 * @property int|null $version
 *
+* @property Manager[] $managers
 * @property Meta[] $metas
 * @property User $author
 * @property File $image_id0
@@ -93,10 +94,10 @@ class Verse extends \yii\db\ActiveRecord
             'image',
             'resources',
             'description',
+            'managers',
             'code' => function () {
                 $verseCode = $this->verseCode;
                 $cl = Yii::$app->request->get('cl');
-
                 $substring = "";
                 if (!$cl || $cl != 'js') {
                     $cl = 'lua';
@@ -195,6 +196,18 @@ class Verse extends \yii\db\ActiveRecord
 
         return $datas;
     }
+
+
+    /** 
+     * Gets query for [[Managers]]. 
+     * 
+     * @return \yii\db\ActiveQuery 
+     */
+    public function getManagers()
+    {
+        return $this->hasMany(Manager::className(), ['verse_id' => 'id']);
+    }
+
 
     /**
      * Gets query for [[Metas]].
