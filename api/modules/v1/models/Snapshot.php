@@ -22,9 +22,9 @@ use yii\db\Expression;
  * @property string|null $metas
  * @property string|null $resources
  * @property string|null $created_at
- //* @property int|null $author_id
  * @property int|null $created_by
  * @property string|null $type
+ * @property string|null $managers 
  *
  * @property User $author
  * @property User $createdBy
@@ -67,7 +67,7 @@ class Snapshot extends \yii\db\ActiveRecord
             [['verse_id'], 'required'],
             [['verse_id',/* 'author_id', */ 'created_by'], 'integer'],
             [['code'], 'string'],
-            [['data',/* 'image',*/ 'metas', 'resources', 'created_at'], 'safe'],
+            [['data',/* 'image',*/ 'metas', 'resources', 'created_at','managers'], 'safe'],
             [[/*'name', 'description',*/ 'uuid'/*, 'type'*/], 'string', 'max' => 255],
           //  [['author_id'], 'exist', 'skipOnError' => true, 'targetClass' => User::className(), 'targetAttribute' => ['author_id' => 'id']],
             [['created_by'], 'exist', 'skipOnError' => true, 'targetClass' => User::className(), 'targetAttribute' => ['created_by' => 'id']],
@@ -94,6 +94,7 @@ class Snapshot extends \yii\db\ActiveRecord
             'created_at' => Yii::t('app', 'Created At'),
             // 'author_id' => Yii::t('app', 'Author ID'),
             'created_by' => Yii::t('app', 'Created By'),
+            'managers' => Yii::t('app', 'Managers'),
             // 'type' => Yii::t('app', 'Type'),
         ];
     }
