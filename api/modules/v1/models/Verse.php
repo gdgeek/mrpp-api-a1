@@ -9,6 +9,7 @@ use Yii;
 use yii\behaviors\BlameableBehavior;
 use yii\behaviors\TimestampBehavior;
 use yii\db\Expression;
+use yii\db\ActiveQuery;
 
 /**
 * This is the model class for table "verse".
@@ -29,7 +30,7 @@ use yii\db\Expression;
 * @property Manager[] $managers
 * @property Meta[] $metas
 * @property User $author
-* @property File $image_id0
+* @property File $image
 * @property User $updater
 
 */
@@ -252,7 +253,7 @@ class Verse extends \yii\db\ActiveRecord
      *
      * @return \yii\db\ActiveQuery|UserQuery
      */
-    public function getAuthor()
+    public function getAuthor(): ActiveQuery
     {
         return $this->hasOne(User::className(), ['id' => 'author_id']);
     }

@@ -8,6 +8,7 @@ use yii\helpers\Url;
 use yii\behaviors\BlameableBehavior;
 use yii\behaviors\TimestampBehavior;
 use yii\db\Expression;
+use yii\db\ActiveRecord;
 /**
  * This is the model class for table "snapshot".
  *
@@ -144,11 +145,14 @@ class Snapshot extends \yii\db\ActiveRecord
             'description' => function () {
                 return $this->verse->description;
             },
-            'image' => function () {
-                return $this->verse->getImage()->one();
+            'image' => function (): ActiveRecord|array|null {
+                return $this->verse->image;
             },
             'author_id' => function () {
                 return $this->verse->author_id;
+            },
+            'author' => function (): User {
+                return $this->verse->author;
             },
             'uuid',
             'verse_id',
