@@ -156,6 +156,7 @@ class Snapshot extends \yii\db\ActiveRecord
             'data',
             'metas',
             'resources',
+            'managers',
         ];
     }
 
