@@ -2,6 +2,7 @@
 
 namespace app\modules\v1\models;
 
+
 use yii\web\IdentityInterface;
 use Yii;
 
@@ -44,8 +45,35 @@ class User extends \yii\db\ActiveRecord implements IdentityInterface
     {
         return $this->authKey === $authKey;
     }
+   
+    public function getUserLinkeds()
+    {
+        return $this->hasMany(UserLinked::className(), ['user_id' => 'id']);
+    }
+     public static function findByUserLinked($key):User|null
+    {
+        $link = UserLinked::find()->where(['key' => $key])->one();
+        if (!$link) {
+            throw new \yii\web\UnauthorizedHttpException('Linked key is invalid.');
+        }
+        
+        $user = static::findIdentity($link->user_id);
+        if (!$user) {
+            throw new \yii\web\UnauthorizedHttpException('User is not found.');
+        }
+        return $user;
+        
+    }
+    
+     /**
+     * Finds user by refresh token
+     *
+     * @param string $refreshToken
+     * @return static|null
+     * @throws \yii\web\UnauthorizedHttpException if refresh token is invalid or user is not found
+     */
 
-    public static function findByRefreshToken($refreshToken)
+    public static function findByRefreshToken($refreshToken): User|null
     {
      
 
