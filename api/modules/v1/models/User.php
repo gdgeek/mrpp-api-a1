@@ -85,6 +85,7 @@ class User extends \yii\db\ActiveRecord implements IdentityInterface
 
     public function token()
     {
+        
         $token = new RefreshToken();
         $token->user_id = $this->id;
 
