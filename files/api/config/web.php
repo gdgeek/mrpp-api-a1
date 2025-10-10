@@ -164,6 +164,7 @@ $config = [
                     'extraPatterns' => [
                         'POST login' => 'login',
                         'POST refresh' => 'refresh',
+                        'POST key-to-token' => 'key-to-token',
                     ],
                 ],
                 [

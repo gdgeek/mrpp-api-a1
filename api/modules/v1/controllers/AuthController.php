@@ -38,6 +38,17 @@ class AuthController extends \yii\rest\Controller
     return ['success' => true, 'message' => "refresh", 'nickname'=>$user->nickname, 'token' => $user->token()];
 
   }
+  public function actionKeyToToken(){
+    $key = Yii::$app->request->post("key");
+    if (!$key) {
+      throw new BadRequestHttpException("key is required");
+    }
+    $user = User::findByUserLinked($key);
+    if (!$user) {
+      throw new BadRequestHttpException("no user");
+    }
+    return ['success' => true, 'message' => "keyToToken", 'nickname'=>$user->nickname, 'token' => $user->token()];
+  }
   public function actionLogin()
   {
 

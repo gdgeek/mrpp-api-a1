@@ -35,29 +35,20 @@ class CommonController extends Controller
 
 
         $refreshToken = Yii::$app->request->post("refreshToken");
-        if ($refreshToken) {
-            $user = User::findByRefreshToken($refreshToken);
-            if (!$user) {
-                throw new BadRequestHttpException('User not found.');
-            }
-            return [
-                'nickname' => $user->nickname,
-                'token' => $user->token(),
-            ];
-        } else {
-            $key = Yii::$app->request->post("key");
-            if (!$key) {
-                throw new BadRequestHttpException("key is required");
-            }
-            $user = User::findByUserLinked($key);
-            if (!$user) {
-                throw new BadRequestHttpException("no user");
-            }
-            return [
-                'nickname' => $user->nickname,
-                'token' => $user->token(),
-            ];
+        if (!$refreshToken) {
+            throw new BadRequestHttpException('Refresh token is required.');
         }
+        $user = User::findByRefreshToken($refreshToken);
+        if (!$user) {
+            throw new BadRequestHttpException('User not found.');
+        }
+        return [
+            'nickname' => $user->nickname,
+            'token' => $user->token(),
+        ];
+
+
+
 
     }
     public function actionReport()
@@ -85,7 +76,7 @@ class CommonController extends Controller
         }
     }
 
-
+    
 
     public function actionVerify()
     {
