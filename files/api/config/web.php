@@ -119,12 +119,13 @@ $config = [
                     'extraPatterns' => [
                         'GET test' => 'test',
                         'GET public' => 'public',// 发布的场景
+                        'GET checkin' => 'checkin',// 打卡使用的场景
                         'GET snapshot' => 'snapshot',// 快照 通过id
                         //还需要通过verse_id 得得到快照
                         'GET private' => 'private',//私有场景
                         //这里还要得到组的场景
+                        'GET group' => 'group',
                         'GET tags' => 'tags',//得到所有标签
-                    
                     ],
                 ],
 

@@ -25,6 +25,22 @@ class ServerController extends Controller
     {
         return "test";
     }
+    public function actionCheckin(): string
+    {
+       $searchModel = new SnapshotSearch();
+        $dataProvider = $searchModel->search(Yii::$app->request->queryParams);
+        // $dataProvider->query->andWhere(['author_id' => Yii::$app->user->id]);
+
+
+
+        $query = $dataProvider->query;
+        //链接tag表进行过滤。tag表的key为checkin,通过verse_tags链接
+        $query->innerJoin('verse_property AS vp', 'vp.verse_id  = snapshot.verse_id')
+            ->innerJoin('property', 'property.id = vp.property_id')
+            ->andWhere(['property.key' => 'checkin'])->groupBy(['snapshot.id']);
+
+        return $dataProvider;
+    }
     public function actionPublic()
     {
         $searchModel = new SnapshotSearch();
@@ -54,6 +70,34 @@ class ServerController extends Controller
         // 读取结果缓存 30 秒（不改变分页/序列化行为）
         $dataProvider->query->cache(30);
 
+        return $dataProvider;
+    }
+    public function actionGroup()
+    {
+        $userId = Yii::$app->user->id;
+        
+        // 使用子查询合并为一次查询
+        // group_user -> group_verse -> snapshot
+        $verseIdsSubQuery = (new \yii\db\Query())
+            ->select('gv.verse_id')
+            ->from('group_verse gv')
+            ->innerJoin('group_user gu', 'gu.group_id = gv.group_id')
+            ->where(['gu.user_id' => $userId]);
+
+        $pageSize = (int)Yii::$app->request->get('pageSize', 15);
+        $page = (int)Yii::$app->request->get('page', 1);
+        
+        $query = Snapshot::find()
+            ->where(['verse_id' => $verseIdsSubQuery])
+            ->cache(30);
+
+        $dataProvider = new \yii\data\ActiveDataProvider([
+            'query' => $query,
+            'pagination' => [
+                'pageSize' => $pageSize,
+                'page' => $page - 1,
+            ],
+        ]);
         return $dataProvider;
     }
     public function actionPrivate()
