@@ -12,15 +12,22 @@ use yii\rest\Controller;
 class PublicController extends Controller
 {
 
-    
+
     public function behaviors()
     {
         $behaviors = parent::behaviors();
         // unset($behaviors['authenticator']);
-      
+
         return $behaviors;
     }
-
+    
+    public function actions()
+    {
+        $actions = parent::actions();
+        // 禁用不需要的操作
+        unset($actions['index'], $actions['view'], $actions['create'], $actions['update'], $actions['delete'], $actions['options']);
+        return [];//$actions;
+    }
 
     public function actionByUuid($uuid)
     {
@@ -76,7 +83,7 @@ class PublicController extends Controller
         $searchModel = new SnapshotSearch();
 
         $papeSize = Yii::$app->request->get('pageSize', 15);
-        
+
         $dataProvider = $searchModel->search(Yii::$app->request->queryParams, $papeSize);
 
 
@@ -88,7 +95,7 @@ class PublicController extends Controller
         $tags = Yii::$app->request->get('tags');
         // 如果tags参数存在，将其转换为数字数组
         if ($tags) {
-            $tagsArray = array_map('intval', explode(',', $tags));
+            $tagsArray = array_map('intval', explode(',', string: $tags));
             if (isset($tagsArray) && !empty($tagsArray)) {
                 // 假设有一个 verse_tags 表，包含 verse_id 和 tag_id 字段
                 $dataProvider->query->innerJoin('verse_tags AS vt2', 'vt2.verse_id = snapshot.verse_id')

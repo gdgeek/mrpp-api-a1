@@ -39,13 +39,15 @@ class TagsController extends ActiveController
     }
    
     public function actionIndex(){
-     
         $searchModel = new TagsSearch();
         $dataProvider = $searchModel->search(Yii::$app->request->queryParams);
         //返回所有type为Classify 的
         $dataProvider->query->andWhere(['type' => 'Classify']);
-       
         return $dataProvider;
+    }
+
+    public function actionLogin(){
+        
     }
  
 

@@ -72,6 +72,8 @@ $config = [
         'cache' => [
             //  'class' => 'yii\caching\FileCache',
             'class' => 'yii\redis\Cache',
+            // 全局默认缓存时长（秒）
+            'defaultDuration' => 30,
             'redis' => [
                 'hostname' => getenv('REDIS_HOST'),
                 'port' => getenv('REDIS_PORT'),
@@ -110,12 +112,54 @@ $config = [
             'showScriptName' => false,
             'enableStrictParsing' => true,
             'rules' => [
+                [
+                    'class' => 'yii\rest\UrlRule',
+                    'controller' => 'v1/server',
+                    'pluralize' => false,
+                    'extraPatterns' => [
+                        'GET test' => 'test',
+                        'GET public' => 'public',// 发布的场景
+                        'GET snapshot' => 'snapshot',// 快照 通过id
+                        //还需要通过verse_id 得得到快照
+                        'GET private' => 'private',//私有场景
+                        //这里还要得到组的场景
+                        'GET tags' => 'tags',//得到所有标签
+                    
+                    ],
+                ],
 
                 [
-                    'pattern' => 'apple-app-site-association',
-                    'route' => 'site/apple-app-site-association',
-                    'suffix' => ''
+                    'class' => 'yii\rest\UrlRule',
+                    'controller' => 'v1/auth',
+                    'pluralize' => false,
+                    'extraPatterns' => [
+                        'POST login' => 'login',
+                        'POST refresh' => 'refresh',
+                    ],
                 ],
+               
+
+
+              
+                /* 给苹果用的
+
+
+                                [
+                                    'class' => 'yii\rest\UrlRule',
+                                    'controller' => 'v1/auth',
+                                    'pluralize' => false,
+                                    'extraPatterns' => [
+                                        'POST login' => 'login',
+                                        'POST refresh' => 'refresh',
+                                        'POST key-to-token' => 'key-to-token',
+                                    ],
+                                ],
+                                [
+                                    'pattern' => 'apple-app-site-association',
+                                    'route' => 'site/apple-app-site-association',
+                                    'suffix' => ''
+                                ],*/
+                /*
                 [
                     'class' => 'yii\rest\UrlRule',
                     'controller' => 'v1/common',
@@ -199,7 +243,7 @@ $config = [
                         'GET release' => 'release',
                         'GET public' => 'public',
                     ],
-                ],
+                ],*/
 
             ],
         ],
@@ -210,7 +254,7 @@ $config = [
 /*
 
   public function actionDeviceRegister(){
-    
+
 
   }
   public function actionGameReady(){
@@ -221,7 +265,7 @@ $config = [
   }
   public function actionGameOver(){
 
-    
+
 */
 
 if (YII_ENV_DEV) {

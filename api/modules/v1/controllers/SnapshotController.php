@@ -50,6 +50,7 @@ class SnapshotController extends ActiveController
         }
         return $model;
     }
+    
 
 
     public function actionIndex()

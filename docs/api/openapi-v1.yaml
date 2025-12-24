@@ -1,0 +1,901 @@
+openapi: 3.0.3
+info:
+  title: API A1 - v1
+  version: "1.0"
+  description: |
+    由当前代码仓库自动梳理的 v1 API 文档（基于 Yii2 `yii\rest\UrlRule` 与各 Controller 的 action）。
+
+    注意：部分 Model（如 Verse/Snapshot）在 `fields()` 返回空数组，默认序列化可能返回 `{}`；需要通过 `expand` 查询参数显式展开字段。
+servers:
+  - url: /
+    description: Same host
+
+tags:
+  - name: Meta
+  - name: Auth
+  - name: Common
+  - name: Private
+  - name: Public
+  - name: Checkin
+  - name: Tags
+  - name: Phototype
+  - name: Snapshot
+  - name: Verse
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  parameters:
+    Expand:
+      name: expand
+      in: query
+      required: false
+      description: |
+        Yii2 REST 的字段展开参数。Verse/Snapshot 默认 fields 为空时，需通过 expand 才能拿到字段。
+        示例：`?expand=id,name,uuid,metas,resources`。
+      schema:
+        type: string
+    TagsCsv:
+      name: tags
+      in: query
+      required: false
+      description: 以逗号分隔的 tag id 列表，例如 `1,2,3`
+      schema:
+        type: string
+    Page:
+      name: page
+      in: query
+      required: false
+      description: 页码（Yii2 pagination）
+      schema:
+        type: integer
+        minimum: 1
+    PageSize:
+      name: pageSize
+      in: query
+      required: false
+      description: 每页数量（部分接口支持）
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 200
+  schemas:
+    Error:
+      type: object
+      properties:
+        name:
+          type: string
+        message:
+          type: string
+        code:
+          type: integer
+        status:
+          type: integer
+        type:
+          type: string
+    TokenBundle:
+      type: object
+      properties:
+        accessToken:
+          type: string
+        expires:
+          type: string
+          description: "Y-m-d H:i:s"
+        refreshToken:
+          type: string
+    AuthResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        message:
+          type: string
+        nickname:
+          type: string
+        token:
+          $ref: "#/components/schemas/TokenBundle"
+    VerifyResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        message:
+          type: string
+        data:
+          type: object
+          properties:
+            watermark:
+              type: boolean
+            shutdown:
+              type: boolean
+    ReportResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        message:
+          type: string
+        user:
+          type: object
+          nullable: true
+          properties:
+            nickname:
+              type: string
+            token:
+              $ref: "#/components/schemas/TokenBundle"
+        data:
+          type: object
+          properties:
+            watermark:
+              type: boolean
+    TagsItem:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+          nullable: true
+        key:
+          type: string
+          nullable: true
+        type:
+          type: string
+    PhototypeInfo:
+      type: object
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+          nullable: true
+        data:
+          description: Phototype.data（可能为 JSON/字符串）
+          oneOf:
+            - type: object
+              additionalProperties: true
+            - type: string
+              nullable: true
+        resource:
+          description: 关联资源（由 `extraFields` 输出，结构依赖 Resource 模型）
+          oneOf:
+            - type: object
+              additionalProperties: true
+            - type: null
+    Verse:
+      description: |
+        Verse 默认 `fields()` 为空；只有传 `expand=...` 才会返回 `extraFields()` 列表。
+      type: object
+      additionalProperties: true
+    Snapshot:
+      description: |
+        Snapshot 默认 `fields()` 为空；只有传 `expand=...` 才会返回 `extraFields()` 列表。
+      type: object
+      additionalProperties: true
+
+paths:
+  /apple-app-site-association:
+    get:
+      tags: [Meta]
+      summary: Apple Universal Links 配置（apple-app-site-association）
+      description: |
+        路由规则在配置中存在，但当前仓库的 `SiteController` 未实现 `actionAppleAppSiteAssociation()`，
+        实际运行可能返回 404（取决于线上是否有额外配置/覆盖）。
+      responses:
+        "200":
+          description: JSON（AASA 文件）
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /v1/auth/login:
+    post:
+      tags: [Auth]
+      summary: 用户登录
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [username, password]
+              properties:
+                username:
+                  type: string
+                password:
+                  type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+        "400":
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /v1/auth/refresh:
+    post:
+      tags: [Auth]
+      summary: 刷新 token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [refreshToken]
+              properties:
+                refreshToken:
+                  type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+        "400":
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /v1/auth/key-to-token:
+    post:
+      tags: [Auth]
+      summary: 通过 linked key 换取 token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [key]
+              properties:
+                key:
+                  type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+        "400":
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /v1/common/test:
+    get:
+      tags: [Common]
+      summary: Redis 测试/信息
+      responses:
+        "200":
+          description: Redis INFO 输出（结构随 Redis 版本变化）
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+
+  /v1/common/verify:
+    post:
+      tags: [Common]
+      summary: Verify（当前实现为固定返回）
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VerifyResponse"
+
+  /v1/common/report:
+    post:
+      tags: [Common]
+      summary: Report（需要 refreshToken 以返回 user 数据）
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [refreshToken]
+              properties:
+                refreshToken:
+                  type: string
+      responses:
+        "200":
+          description: OK（内部 try/catch，失败也会返回 200 + success=false）
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReportResponse"
+
+  /v1/private/by-uuid:
+    get:
+      tags: [Private]
+      summary: 按 uuid 获取私有 Snapshot（仅本人 verse）
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: uuid
+          in: query
+          required: true
+          schema:
+            type: string
+        - $ref: "#/components/parameters/Expand"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Snapshot"
+        "400":
+          description: Not found / bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /v1/private/by-verse-id:
+    get:
+      tags: [Private]
+      summary: 按 verse_id 获取私有 Snapshot（仅本人 verse）
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: verse_id
+          in: query
+          required: true
+          schema:
+            type: integer
+        - $ref: "#/components/parameters/Expand"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Snapshot"
+        "400":
+          description: Not found / bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /v1/private/by-id:
+    get:
+      tags: [Private]
+      summary: 按 snapshot.id 获取私有 Snapshot（仅本人 verse）
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: query
+          required: true
+          schema:
+            type: integer
+        - $ref: "#/components/parameters/Expand"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Snapshot"
+        "400":
+          description: Not found / bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /v1/private/list:
+    get:
+      tags: [Private]
+      summary: 私有 Snapshot 列表（仅本人 verse）
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/TagsCsv"
+        - $ref: "#/components/parameters/Page"
+        - $ref: "#/components/parameters/PageSize"
+        - $ref: "#/components/parameters/Expand"
+      responses:
+        "200":
+          description: OK（数组；分页信息在响应头 X-Pagination-*）
+          headers:
+            X-Pagination-Total-Count:
+              schema: { type: string }
+            X-Pagination-Page-Count:
+              schema: { type: string }
+            X-Pagination-Current-Page:
+              schema: { type: string }
+            X-Pagination-Per-Page:
+              schema: { type: string }
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Snapshot"
+
+  /v1/public/by-uuid:
+    get:
+      tags: [Public]
+      summary: 按 uuid 获取公开 Snapshot（需要 public tag）
+      parameters:
+        - name: uuid
+          in: query
+          required: true
+          schema:
+            type: string
+        - $ref: "#/components/parameters/Expand"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Snapshot"
+        "400":
+          description: Not found / bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /v1/public/by-verse-id:
+    get:
+      tags: [Public]
+      summary: 按 verse_id 获取公开 Snapshot（需要 public tag）
+      parameters:
+        - name: verse_id
+          in: query
+          required: true
+          schema:
+            type: integer
+        - $ref: "#/components/parameters/Expand"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Snapshot"
+        "400":
+          description: Not found / bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /v1/public/by-id:
+    get:
+      tags: [Public]
+      summary: 按 snapshot.id 获取公开 Snapshot（需要 public tag）
+      parameters:
+        - name: id
+          in: query
+          required: true
+          schema:
+            type: integer
+        - $ref: "#/components/parameters/Expand"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Snapshot"
+        "400":
+          description: Not found / bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /v1/public/list:
+    get:
+      tags: [Public]
+      summary: 公开 Snapshot 列表（需要 public tag）
+      parameters:
+        - $ref: "#/components/parameters/TagsCsv"
+        - $ref: "#/components/parameters/Page"
+        - $ref: "#/components/parameters/PageSize"
+        - $ref: "#/components/parameters/Expand"
+      responses:
+        "200":
+          description: OK（数组；分页信息在响应头 X-Pagination-*）
+          headers:
+            X-Pagination-Total-Count:
+              schema: { type: string }
+            X-Pagination-Page-Count:
+              schema: { type: string }
+            X-Pagination-Current-Page:
+              schema: { type: string }
+            X-Pagination-Per-Page:
+              schema: { type: string }
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Snapshot"
+
+  /v1/checkin/list:
+    get:
+      tags: [Checkin]
+      summary: checkin Snapshot 列表（通过 tags.key=checkin 过滤）
+      parameters:
+        - $ref: "#/components/parameters/Page"
+        - $ref: "#/components/parameters/Expand"
+      responses:
+        "200":
+          description: OK（数组；分页信息在响应头 X-Pagination-*）
+          headers:
+            X-Pagination-Total-Count:
+              schema: { type: string }
+            X-Pagination-Page-Count:
+              schema: { type: string }
+            X-Pagination-Current-Page:
+              schema: { type: string }
+            X-Pagination-Per-Page:
+              schema: { type: string }
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Snapshot"
+
+  /v1/tags:
+    get:
+      tags: [Tags]
+      summary: Tag 列表（固定筛选 type=Classify）
+      parameters:
+        - name: id
+          in: query
+          required: false
+          schema: { type: integer }
+        - name: name
+          in: query
+          required: false
+          schema: { type: string }
+        - name: key
+          in: query
+          required: false
+          schema: { type: string }
+      responses:
+        "200":
+          description: OK（数组；分页信息在响应头 X-Pagination-*）
+          headers:
+            X-Pagination-Total-Count:
+              schema: { type: string }
+            X-Pagination-Page-Count:
+              schema: { type: string }
+            X-Pagination-Current-Page:
+              schema: { type: string }
+            X-Pagination-Per-Page:
+              schema: { type: string }
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/TagsItem"
+
+  /v1/phototype/info:
+    get:
+      tags: [Phototype]
+      summary: Phototype 信息（按 type）
+      parameters:
+        - name: type
+          in: query
+          required: true
+          schema:
+            type: string
+        - $ref: "#/components/parameters/Expand"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PhototypeInfo"
+        "400":
+          description: Not found / bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /v1/snapshot:
+    get:
+      tags: [Snapshot]
+      summary: Snapshot 列表（支持 tags 过滤）
+      parameters:
+        - $ref: "#/components/parameters/TagsCsv"
+        - $ref: "#/components/parameters/Page"
+        - $ref: "#/components/parameters/Expand"
+      responses:
+        "200":
+          description: OK（数组；分页信息在响应头 X-Pagination-*）
+          headers:
+            X-Pagination-Total-Count:
+              schema: { type: string }
+            X-Pagination-Page-Count:
+              schema: { type: string }
+            X-Pagination-Current-Page:
+              schema: { type: string }
+            X-Pagination-Per-Page:
+              schema: { type: string }
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Snapshot"
+
+  /v1/snapshot/public:
+    get:
+      tags: [Snapshot]
+      summary: 公开 Snapshot 列表（tags.key=public）
+      parameters:
+        - $ref: "#/components/parameters/TagsCsv"
+        - $ref: "#/components/parameters/Page"
+        - $ref: "#/components/parameters/Expand"
+      responses:
+        "200":
+          description: OK（数组；分页信息在响应头 X-Pagination-*）
+          headers:
+            X-Pagination-Total-Count:
+              schema: { type: string }
+            X-Pagination-Page-Count:
+              schema: { type: string }
+            X-Pagination-Current-Page:
+              schema: { type: string }
+            X-Pagination-Per-Page:
+              schema: { type: string }
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Snapshot"
+
+  /v1/snapshot/by-uuid:
+    get:
+      tags: [Snapshot]
+      summary: 按 uuid 获取 Snapshot
+      parameters:
+        - name: uuid
+          in: query
+          required: true
+          schema:
+            type: string
+        - $ref: "#/components/parameters/Expand"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Snapshot"
+        "400":
+          description: Not found / bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /v1/snapshot/by-verse-id:
+    get:
+      tags: [Snapshot]
+      summary: 按 verse_id 获取 Snapshot
+      parameters:
+        - name: verse_id
+          in: query
+          required: true
+          schema:
+            type: integer
+        - $ref: "#/components/parameters/Expand"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Snapshot"
+        "400":
+          description: Not found / bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /v1/snapshot/{id}:
+    get:
+      tags: [Snapshot]
+      summary: Snapshot 详情（ActiveController 默认 view）
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+        - $ref: "#/components/parameters/Expand"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Snapshot"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /v1/verse:
+    get:
+      tags: [Verse]
+      summary: Verse 列表（按 author_id=当前用户 id 过滤）
+      parameters:
+        - $ref: "#/components/parameters/TagsCsv"
+        - $ref: "#/components/parameters/Page"
+        - $ref: "#/components/parameters/Expand"
+      responses:
+        "200":
+          description: OK（数组；分页信息在响应头 X-Pagination-*）
+          headers:
+            X-Pagination-Total-Count:
+              schema: { type: string }
+            X-Pagination-Page-Count:
+              schema: { type: string }
+            X-Pagination-Current-Page:
+              schema: { type: string }
+            X-Pagination-Per-Page:
+              schema: { type: string }
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Verse"
+
+  /v1/verse/public:
+    get:
+      tags: [Verse]
+      summary: 公开 Verse 列表（tags.key=public）
+      parameters:
+        - $ref: "#/components/parameters/TagsCsv"
+        - $ref: "#/components/parameters/Page"
+        - $ref: "#/components/parameters/Expand"
+      responses:
+        "200":
+          description: OK（数组；分页信息在响应头 X-Pagination-*）
+          headers:
+            X-Pagination-Total-Count:
+              schema: { type: string }
+            X-Pagination-Page-Count:
+              schema: { type: string }
+            X-Pagination-Current-Page:
+              schema: { type: string }
+            X-Pagination-Per-Page:
+              schema: { type: string }
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Verse"
+
+  /v1/verse/open:
+    get:
+      tags: [Verse]
+      summary: open Verse 列表（存在 verse_open 关联）
+      parameters:
+        - $ref: "#/components/parameters/Page"
+        - $ref: "#/components/parameters/PageSize"
+        - $ref: "#/components/parameters/Expand"
+      responses:
+        "200":
+          description: OK（数组；分页信息在响应头 X-Pagination-*）
+          headers:
+            X-Pagination-Total-Count:
+              schema: { type: string }
+            X-Pagination-Page-Count:
+              schema: { type: string }
+            X-Pagination-Current-Page:
+              schema: { type: string }
+            X-Pagination-Per-Page:
+              schema: { type: string }
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Verse"
+
+  /v1/verse/release:
+    get:
+      tags: [Verse]
+      summary: 按 release code 获取 Verse（返回单个）
+      parameters:
+        - name: code
+          in: query
+          required: true
+          schema:
+            type: string
+        - $ref: "#/components/parameters/Expand"
+      responses:
+        "200":
+          description: OK（注意：返回单个对象，而不是数组）
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Verse"
+        "400":
+          description: 缺乏 code 数据 / bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /v1/verse/{id}:
+    get:
+      tags: [Verse]
+      summary: Verse 详情（ActiveController 默认 view）
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+        - $ref: "#/components/parameters/Expand"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Verse"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
