@@ -117,6 +117,7 @@ $config = [
                     'controller' => 'v1/server',
                     'pluralize' => false,
                     'extraPatterns' => [
+                        'HEAD test' => 'test',
                         'GET test' => 'test',
                         'GET public' => 'public',// 发布的场景
                         'GET checkin' => 'checkin',// 打卡使用的场景
