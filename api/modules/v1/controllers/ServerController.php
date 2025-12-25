@@ -6,6 +6,8 @@ use yii\web\BadRequestHttpException;
 use app\modules\v1\models\Snapshot;
 use app\modules\v1\models\User;
 use yii\helpers\HtmlPurifier;
+use bizley\jwt\JwtHttpBearerAuth;
+use yii\filters\auth\CompositeAuth;
 use yii\rest\Controller;
 use Yii;
 class ServerController extends Controller
@@ -14,7 +16,14 @@ class ServerController extends Controller
     public function behaviors()
     {
         $behaviors = parent::behaviors();
-
+       
+        $behaviors['authenticator'] = [
+            'class' => CompositeAuth::class,
+            'authMethods' => [
+                JwtHttpBearerAuth::class,
+            ],
+            'except' => ['options','public','test','tags','snapshot','checkin'],
+        ];
         return $behaviors;
     }
     public function actions()
