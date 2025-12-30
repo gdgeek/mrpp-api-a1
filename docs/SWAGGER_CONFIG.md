@@ -5,9 +5,8 @@
 ## 目录
 
 - [快速开始（新项目配置）](#快速开始新项目配置)
-- [基本配置](#基本配置)
 - [访问地址](#访问地址)
-- [文件结构](#文件结构)
+- [推荐文件结构](#推荐文件结构)
 - [如何添加 API 注解](#如何添加-api-注解)
 - [常见问题与解决方案](#常见问题与解决方案)
 - [依赖说明](#依赖说明)
@@ -228,66 +227,9 @@ class TestController extends \yii\rest\Controller
 
 ---
 
-## 基本配置
-
-项目使用 **zircote/swagger-php** 库来生成 OpenAPI 3.0 格式的 API 文档。
-
-### API 基本信息配置
-
-在 [SwaggerController.php](file:///Users/dirui/Projects/web/wechat/server/api/controllers/SwaggerController.php) 中定义了 API 的基本信息：
-
-```php
-/**
- * @OA\Info(
- *     version="2.0.0",
- *     title="微信小程序后端 API (v2)",
- *     description="游戏娱乐管理系统 RESTful API 文档"
- * )
- * @OA\Server(url="/", description="API Server")
- * @OA\SecurityScheme(
- *     securityScheme="Bearer",
- *     type="http",
- *     scheme="bearer",
- *     bearerFormat="JWT"
- * )
- */
-```
-
-### 扫描文件列表
-
-SwaggerController 配置了需要扫描的文件列表：
-
-**Controllers (v2):**
-
-- `AppletController.php`
-- `DeviceController.php`
-- `FileController.php`
-- `ManagerController.php`
-- `PlayerController.php`
-- `RootController.php`
-- `ServerController.php`
-- `SetupController.php`
-- `SiteController.php`
-- `TencentCloudController.php`
-- `WechatController.php`
-- `WechatPayController.php`
-
-**Models (v2):**
-
-- `Applet.php`
-- `Control.php`
-- `Device.php`
-- `DeviceSearch.php`
-- `File.php`
-- `FileSearch.php`
-- `RecodeFile.php`
-- `Report.php`
-- `Setup.php`
-- `User.php`
-
----
-
 ## 访问地址
+
+配置完成后，可通过以下地址访问：
 
 | 地址                   | 说明                |
 | ---------------------- | ------------------- |
@@ -296,7 +238,7 @@ SwaggerController 配置了需要扫描的文件列表：
 
 ### 路由配置
 
-在 [web.php](file:///Users/dirui/Projects/web/wechat/server/files/api/config/web.php) 中配置了以下路由：
+在 `config/web.php` 的 `urlManager` 规则中添加：
 
 ```php
 // Swagger API 文档路由
@@ -306,25 +248,23 @@ SwaggerController 配置了需要扫描的文件列表：
 
 ---
 
-## 文件结构
+## 推荐文件结构
 
 ```
 api/
 ├── controllers/
 │   └── SwaggerController.php       # Swagger 主控制器
-├── modules/v2/
+├── modules/v1/                     # 或 v2 等版本目录
 │   ├── controllers/               # 需要添加注解的控制器
-│   │   ├── AppletController.php
-│   │   ├── DeviceController.php
+│   │   ├── YourController.php
 │   │   └── ...
 │   └── models/                    # 需要添加注解的模型
-│       ├── Device.php
-│       ├── User.php
+│       ├── YourModel.php
 │       └── ...
 ├── web/swagger-ui/                 # Swagger UI 静态资源
 │   ├── swagger-ui-bundle.js
 │   └── swagger-ui.css
-└── vendor/zircote/swagger-php/     # Swagger PHP 库
+└── vendor/zircote/swagger-php/     # Swagger PHP 库（Composer 安装）
 ```
 
 ---
@@ -450,9 +390,131 @@ public function actionIndex()
 
 **解决方案：**
 
-为 Swagger 端点添加 HTTP Basic 认证保护：
+有两种方案可以保护 Swagger 端点：
 
-在 Nginx 配置中添加：
+---
+
+#### 方案 A: PHP 应用层保护（推荐）
+
+这种方案在应用层实现认证，无需修改 Web 服务器配置，更便于跨环境部署。
+
+**步骤 1: 配置 params.php**
+
+在 `config/params.php` 中添加 Swagger 凭据配置（支持环境变量）：
+
+```php
+<?php
+return [
+    // ... 其他配置 ...
+
+    // Swagger API 文档访问凭据（从环境变量读取）
+    'swagger' => [
+        'username' => getenv('SWAGGER_USERNAME') ?: 'swagger_admin',
+        'password' => getenv('SWAGGER_PASSWORD') ?: 'YourStrongP@ssw0rd!',
+    ],
+];
+```
+
+**步骤 2: 修改 SwaggerController.php**
+
+在 `SwaggerController` 中添加 `beforeAction` 方法实现 HTTP Basic Authentication：
+
+```php
+<?php
+
+namespace app\controllers;
+
+use Yii;
+use yii\web\Controller;
+use yii\web\Response;
+use OpenApi\Generator;
+use OpenApi\Annotations as OA;
+
+/**
+ * @OA\Info(...)
+ * @OA\Server(...)
+ * @OA\SecurityScheme(...)
+ */
+class SwaggerController extends Controller
+{
+    public $enableCsrfValidation = false;
+
+    /**
+     * 在执行任何操作前进行身份验证
+     * 使用 HTTP Basic Authentication 保护 Swagger 文档
+     * 凭据配置在 config/params.php 的 'swagger' 键中
+     */
+    public function beforeAction($action)
+    {
+        // 从配置文件读取凭据
+        $swaggerConfig = Yii::$app->params['swagger'] ?? null;
+
+        if (!$swaggerConfig) {
+            throw new \yii\web\ServerErrorHttpException('Swagger 配置未找到');
+        }
+
+        // 检查 HTTP Basic Auth 凭据
+        $username = $_SERVER['PHP_AUTH_USER'] ?? null;
+        $password = $_SERVER['PHP_AUTH_PW'] ?? null;
+
+        if ($username !== $swaggerConfig['username'] || $password !== $swaggerConfig['password']) {
+            header('WWW-Authenticate: Basic realm="Swagger API Documentation"');
+            header('HTTP/1.0 401 Unauthorized');
+            echo '需要认证才能访问 API 文档';
+            exit;
+        }
+
+        return parent::beforeAction($action);
+    }
+
+    // ... actionIndex() 和 actionJsonSchema() 方法保持不变
+}
+```
+
+**步骤 3: Docker Compose 集成**
+
+在 `docker-compose.yml` 中添加环境变量：
+
+```yaml
+services:
+  php:
+    # ... 其他配置 ...
+    environment:
+      # Swagger 认证凭据
+      SWAGGER_USERNAME: ${SWAGGER_USERNAME:-swagger_admin}
+      SWAGGER_PASSWORD: ${SWAGGER_PASSWORD:-YourStrongP@ssw0rd!}
+```
+
+或在 `.env` 文件中配置：
+
+```env
+SWAGGER_USERNAME=swagger_admin
+SWAGGER_PASSWORD=Pr0duct10n$ecureP@ss!
+```
+
+**强密码建议：**
+
+生成强密码应包含：
+
+- ✅ 大写字母
+- ✅ 小写字母
+- ✅ 数字
+- ✅ 特殊符号 (`@`, `#`, `!`, `$`)
+- ✅ 长度至少 16 字符
+
+**不同环境配置示例：**
+
+| 环境     | 用户名          | 密码强度                |
+| -------- | --------------- | ----------------------- |
+| 开发环境 | `dev`           | 简单密码即可            |
+| 测试环境 | `swagger_test`  | 中等强度                |
+| 生产环境 | `swagger_admin` | 强密码（建议 20+ 字符） |
+
+---
+
+#### 方案 B: Nginx 层保护
+
+如果偏好在 Web 服务器层面处理认证：
 
 ```nginx
 location /swagger {
@@ -469,8 +531,15 @@ location /swagger {
 htpasswd -c /path/to/.htpasswd username
 ```
 
+---
+
 > [!IMPORTANT]
 > 建议在生产环境中启用认证保护，防止 API 文档被未授权访问。
+>
+> **方案对比：**
+>
+> - **方案 A (PHP 应用层)**：更灵活，支持环境变量，便于 Docker 部署
+> - **方案 B (Nginx 层)**：性能更好，但需要修改服务器配置
 
 ---
 
