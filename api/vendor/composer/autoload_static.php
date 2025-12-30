@@ -73,7 +73,12 @@ class ComposerStaticInit72ac0b8252822528c034bbf39a2eb746
             'Psr\\EventDispatcher\\' => 20,
             'Psr\\Container\\' => 14,
             'Psr\\Clock\\' => 10,
+            'Psr\\Cache\\' => 10,
             'PhpParser\\' => 10,
+        ),
+        'O' => 
+        array (
+            'OpenApi\\' => 8,
         ),
         'M' => 
         array (
@@ -99,6 +104,7 @@ class ComposerStaticInit72ac0b8252822528c034bbf39a2eb746
         'D' => 
         array (
             'Doctrine\\Common\\Lexer\\' => 22,
+            'Doctrine\\Common\\Annotations\\' => 28,
             'DeepCopy\\' => 9,
         ),
         'C' => 
@@ -246,9 +252,17 @@ class ComposerStaticInit72ac0b8252822528c034bbf39a2eb746
         array (
             0 => __DIR__ . '/..' . '/psr/clock/src',
         ),
+        'Psr\\Cache\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/psr/cache/src',
+        ),
         'PhpParser\\' => 
         array (
             0 => __DIR__ . '/..' . '/nikic/php-parser/lib/PhpParser',
+        ),
+        'OpenApi\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/zircote/swagger-php/src',
         ),
         'Masterminds\\' => 
         array (
@@ -277,6 +291,10 @@ class ComposerStaticInit72ac0b8252822528c034bbf39a2eb746
         'Doctrine\\Common\\Lexer\\' => 
         array (
             0 => __DIR__ . '/..' . '/doctrine/lexer/src',
+        ),
+        'Doctrine\\Common\\Annotations\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/doctrine/annotations/lib/Doctrine/Common/Annotations',
         ),
         'DeepCopy\\' => 
         array (

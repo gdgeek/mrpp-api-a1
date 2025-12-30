@@ -21,7 +21,9 @@
         "bizley/jwt": "^4.1",
         "lcobucci/jwt": "^5.0",
         "lcobucci/clock": "^3.3",
-        "yiisoft/yii2-redis": "^2.0"
+        "yiisoft/yii2-redis": "^2.0",
+        "zircote/swagger-php": "^4.0",
+        "doctrine/annotations": "^2.0"
     },
     "require-dev": {
         "yiisoft/yii2-debug": "~2.1.0",

@@ -10,6 +10,16 @@ use bizley\jwt\JwtHttpBearerAuth;
 use yii\filters\auth\CompositeAuth;
 use yii\rest\Controller;
 use Yii;
+use OpenApi\Annotations as OA;
+
+/**
+ * 服务端 API 控制器
+ *
+ * @OA\Tag(
+ *     name="Server",
+ *     description="场景数据查询相关接口"
+ * )
+ */
 class ServerController extends Controller
 {
 
@@ -30,11 +40,46 @@ class ServerController extends Controller
     {
         return [];
     }
+
+    /**
+     * @OA\Get(
+     *     path="/v1/server/test",
+     *     summary="测试接口",
+     *     tags={"Server"},
+     *     @OA\Response(response=200, description="返回 test 字符串")
+     * )
+     */
     public function actionTest(): string
     {
         return "test";
     }
-    public function actionCheckin(): string
+
+    /**
+     * @OA\Get(
+     *     path="/v1/server/checkin",
+     *     summary="获取打卡场景列表",
+     *     tags={"Server"},
+     *     @OA\Parameter(
+     *         name="page",
+     *         in="query",
+     *         description="页码",
+     *         required=false,
+     *         @OA\Schema(type="integer", default=1)
+     *     ),
+     *     @OA\Parameter(
+     *         name="pageSize",
+     *         in="query",
+     *         description="每页数量",
+     *         required=false,
+     *         @OA\Schema(type="integer", default=15)
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="返回打卡场景快照列表"
+     *     )
+     * )
+     */
+    public function actionCheckin()
     {
        $searchModel = new SnapshotSearch();
         $dataProvider = $searchModel->search(Yii::$app->request->queryParams);
@@ -50,6 +95,39 @@ class ServerController extends Controller
 
         return $dataProvider;
     }
+
+    /**
+     * @OA\Get(
+     *     path="/v1/server/public",
+     *     summary="获取公开发布的场景列表",
+     *     tags={"Server"},
+     *     @OA\Parameter(
+     *         name="page",
+     *         in="query",
+     *         description="页码",
+     *         required=false,
+     *         @OA\Schema(type="integer", default=1)
+     *     ),
+     *     @OA\Parameter(
+     *         name="pageSize",
+     *         in="query",
+     *         description="每页数量",
+     *         required=false,
+     *         @OA\Schema(type="integer", default=15)
+     *     ),
+     *     @OA\Parameter(
+     *         name="tags",
+     *         in="query",
+     *         description="标签ID列表，逗号分隔",
+     *         required=false,
+     *         @OA\Schema(type="string", example="1,2,3")
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="返回公开场景快照列表"
+     *     )
+     * )
+     */
     public function actionPublic()
     {
         $searchModel = new SnapshotSearch();
@@ -81,6 +159,34 @@ class ServerController extends Controller
 
         return $dataProvider;
     }
+
+    /**
+     * @OA\Get(
+     *     path="/v1/server/group",
+     *     summary="获取用户组内的场景列表",
+     *     tags={"Server"},
+     *     security={{"Bearer": {}}},
+     *     @OA\Parameter(
+     *         name="page",
+     *         in="query",
+     *         description="页码",
+     *         required=false,
+     *         @OA\Schema(type="integer", default=1)
+     *     ),
+     *     @OA\Parameter(
+     *         name="pageSize",
+     *         in="query",
+     *         description="每页数量",
+     *         required=false,
+     *         @OA\Schema(type="integer", default=15)
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="返回用户组内的场景快照列表"
+     *     ),
+     *     @OA\Response(response=401, description="未授权")
+     * )
+     */
     public function actionGroup()
     {
         $userId = Yii::$app->user->id;
@@ -109,6 +215,41 @@ class ServerController extends Controller
         ]);
         return $dataProvider;
     }
+
+    /**
+     * @OA\Get(
+     *     path="/v1/server/private",
+     *     summary="获取当前用户的私有场景列表",
+     *     tags={"Server"},
+     *     security={{"Bearer": {}}},
+     *     @OA\Parameter(
+     *         name="page",
+     *         in="query",
+     *         description="页码",
+     *         required=false,
+     *         @OA\Schema(type="integer", default=1)
+     *     ),
+     *     @OA\Parameter(
+     *         name="pageSize",
+     *         in="query",
+     *         description="每页数量",
+     *         required=false,
+     *         @OA\Schema(type="integer", default=15)
+     *     ),
+     *     @OA\Parameter(
+     *         name="tags",
+     *         in="query",
+     *         description="标签ID列表，逗号分隔",
+     *         required=false,
+     *         @OA\Schema(type="string", example="1,2,3")
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="返回用户私有场景快照列表"
+     *     ),
+     *     @OA\Response(response=401, description="未授权")
+     * )
+     */
     public function actionPrivate()
     {
         $searchModel = new SnapshotSearch();
@@ -137,6 +278,17 @@ class ServerController extends Controller
         return $dataProvider;
     }
 
+    /**
+     * @OA\Get(
+     *     path="/v1/server/tags",
+     *     summary="获取所有分类标签",
+     *     tags={"Server"},
+     *     @OA\Response(
+     *         response=200,
+     *         description="返回所有类型为 Classify 的标签列表"
+     *     )
+     * )
+     */
     public function actionTags()
     {
         $searchModel = new TagsSearch();
@@ -149,6 +301,32 @@ class ServerController extends Controller
         return $dataProvider;
     }
 
+    /**
+     * @OA\Get(
+     *     path="/v1/server/snapshot",
+     *     summary="根据ID或verse_id获取单个快照",
+     *     tags={"Server"},
+     *     @OA\Parameter(
+     *         name="id",
+     *         in="query",
+     *         description="快照ID",
+     *         required=false,
+     *         @OA\Schema(type="integer")
+     *     ),
+     *     @OA\Parameter(
+     *         name="verse_id",
+     *         in="query",
+     *         description="场景ID",
+     *         required=false,
+     *         @OA\Schema(type="integer")
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="返回快照详情"
+     *     ),
+     *     @OA\Response(response=400, description="参数错误或快照不存在")
+     * )
+     */
     public function actionSnapshot()
     {
 

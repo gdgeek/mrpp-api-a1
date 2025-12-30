@@ -112,6 +112,10 @@ $config = [
             'showScriptName' => false,
             'enableStrictParsing' => true,
             'rules' => [
+                // Swagger API 文档路由
+                'GET swagger' => 'swagger/index',
+                'GET swagger/json-schema' => 'swagger/json-schema',
+
                 [
                     'class' => 'yii\rest\UrlRule',
                     'controller' => 'v1/server',
