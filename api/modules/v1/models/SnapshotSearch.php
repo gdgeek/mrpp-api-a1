@@ -89,7 +89,7 @@ class SnapshotSearch extends Snapshot
             ->innerJoin('property', 'property.id = vp.property_id')
             ->andWhere(['property.key' => 'checkin'])
             ->groupBy(['snapshot.id']);
-
+ $this->applyTagFilter($query);
         return $dataProvider;
     }
 
@@ -146,6 +146,8 @@ class SnapshotSearch extends Snapshot
         
         $dataProvider->query->andWhere(['verse_id' => $verseIdsSubQuery]);
         
+        $this->applyTagFilter($query);
+
         $dataProvider->query->cache(30);
         
         return $dataProvider;
