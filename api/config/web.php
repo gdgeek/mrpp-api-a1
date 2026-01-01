@@ -74,11 +74,7 @@ $config = [
             'class' => 'yii\redis\Cache',
             // 全局默认缓存时长（秒）
             'defaultDuration' => 30,
-            'redis' => [
-                'hostname' => getenv('REDIS_HOST'),
-                'port' => getenv('REDIS_PORT'),
-                'database' => getenv('REDIS_DB'),
-            ]
+            'redis' => 'redis',
         ],
         'helper' => [
             'class' => 'app\components\Helper',
