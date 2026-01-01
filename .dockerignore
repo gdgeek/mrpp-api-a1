@@ -1,0 +1,10 @@
+.git
+.gitignore
+.github
+tests
+docs
+README.md
+*.log
+api/vendor
+api/tests
+api/runtime
