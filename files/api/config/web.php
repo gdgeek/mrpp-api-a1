@@ -17,6 +17,9 @@ $config = [
         'v1' => [
             'class' => 'app\modules\v1\Module',
         ],
+        'v2' => [
+            'class' => 'app\modules\v2\Module',
+        ],
     ],
 
     'as cors' => [
@@ -250,6 +253,23 @@ $config = [
                         'GET public' => 'public',
                     ],
                 ],*/
+
+                // v2 API rules
+                [
+                    'class' => 'yii\rest\UrlRule',
+                    'controller' => 'v2/snapshot',
+                    'pluralize' => true, // snapshots
+                ],
+                [
+                    'class' => 'yii\rest\UrlRule',
+                    'controller' => 'v2/tags',
+                    'pluralize' => true, // tags
+                ],
+                [
+                    'class' => 'yii\rest\UrlRule',
+                    'controller' => 'v2/system',
+                    'pluralize' => false, // system
+                ],
 
             ],
         ],

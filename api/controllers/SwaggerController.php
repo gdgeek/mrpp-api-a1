@@ -156,6 +156,10 @@ HTML;
             $baseDir . '/modules/v1/models/VerseSearch.php',
             $baseDir . '/modules/v1/models/VerseTags.php',
             $baseDir . '/modules/v1/models/Watermark.php',
+            // v2 Controllers
+            $baseDir . '/modules/v2/controllers/SnapshotController.php',
+            $baseDir . '/modules/v2/controllers/TagsController.php',
+            $baseDir . '/modules/v2/controllers/SystemController.php',
         ];
 
         // 文件存在性检查
