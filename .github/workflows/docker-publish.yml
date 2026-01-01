@@ -43,6 +43,11 @@ jobs:
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
 
+      - name: Notify Portainer Webhook
+        if: github.event_name != 'pull_request' # 仅在合并到主分支时通知
+        run: |
+          curl -X POST "${{ secrets.PORTAINER_WEBHOOK_URL }}"
+
   run-tests:
     runs-on: ubuntu-latest
     steps:
