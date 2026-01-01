@@ -9,9 +9,24 @@ use yii\behaviors\BlameableBehavior;
 use yii\behaviors\TimestampBehavior;
 use yii\db\Expression;
 use yii\helpers\ArrayHelper;
+use OpenApi\Annotations as OA;
 
 /**
 * This is the model class for table "file".
+*
+* @OA\Schema(
+*     schema="File",
+*     title="文件",
+*     description="File model",
+*     @OA\Property(property="id", type="integer", description="ID"),
+*     @OA\Property(property="filename", type="string", description="文件名"),
+*     @OA\Property(property="url", type="string", description="URL"),
+*     @OA\Property(property="md5", type="string", description="MD5"),
+*     @OA\Property(property="type", type="string", description="类型"),
+*     @OA\Property(property="size", type="integer", description="大小"),
+*     @OA\Property(property="key", type="string", description="Key"),
+*     @OA\Property(property="created_at", type="string", format="date-time", description="创建时间")
+* )
 *
 * @property int $id
 * @property string $md5

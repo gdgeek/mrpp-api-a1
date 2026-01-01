@@ -10,11 +10,27 @@ use yii\behaviors\BlameableBehavior;
 use yii\behaviors\TimestampBehavior;
 use yii\db\Expression;
 use yii\db\ActiveQuery;
+use OpenApi\Annotations as OA;
 
 /**
-* This is the model class for table "verse".
-*
-* @property int $id
+ * This is the model class for table "verse".
+ *
+ * @OA\Schema(
+ *     schema="Verse",
+ *     title="场景",
+ *     description="场景数据模型",
+ *     @OA\Property(property="id", type="integer", description="ID"),
+ *     @OA\Property(property="name", type="string", description="场景名称"),
+ *     @OA\Property(property="description", type="string", description="描述"),
+ *     @OA\Property(property="image", ref="#/components/schemas/File", description="封面图片"),
+ *     @OA\Property(property="author_id", type="integer", description="作者ID"),
+ *     @OA\Property(property="created_at", type="string", format="date-time", description="创建时间"),
+ *     @OA\Property(property="updated_at", type="string", format="date-time", description="更新时间"),
+ *     @OA\Property(property="status", type="integer", description="状态"),
+ *     @OA\Property(property="type", type="integer", description="类型")
+ * )
+ *
+ * @property int $id
 * @property int $author_id
 * @property int|null $updater_id
 * @property string $created_at

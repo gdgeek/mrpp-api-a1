@@ -20,6 +20,20 @@ use OpenApi\Annotations as OA;
  */
 class ServerController extends Controller
 {
+    private SnapshotSearch $snapshotSearch;
+    private TagsSearch $tagsSearch;
+
+    public function __construct(
+        $id,
+        $module,
+        SnapshotSearch $snapshotSearch,
+        TagsSearch $tagsSearch,
+        $config = []
+    ) {
+        $this->snapshotSearch = $snapshotSearch;
+        $this->tagsSearch = $tagsSearch;
+        parent::__construct($id, $module, $config);
+    }
 
     public function behaviors()
     {
@@ -73,13 +87,17 @@ class ServerController extends Controller
      *     ),
      *     @OA\Response(
      *         response=200,
-     *         description="返回打卡场景快照列表"
+     *         description="返回打卡场景快照列表",
+     *         @OA\JsonContent(
+     *             type="array",
+     *             @OA\Items(ref="#/components/schemas/Snapshot")
+     *         )
      *     )
      * )
      */
     public function actionCheckin()
     {
-        $searchModel = new SnapshotSearch();
+        $searchModel = clone $this->snapshotSearch;
         return $searchModel->searchCheckin(Yii::$app->request->queryParams);
     }
 
@@ -111,13 +129,17 @@ class ServerController extends Controller
      *     ),
      *     @OA\Response(
      *         response=200,
-     *         description="返回公开场景快照列表"
+     *         description="返回公开场景快照列表",
+     *         @OA\JsonContent(
+     *             type="array",
+     *             @OA\Items(ref="#/components/schemas/Snapshot")
+     *         )
      *     )
      * )
      */
     public function actionPublic()
     {
-        $searchModel = new SnapshotSearch();
+        $searchModel = clone $this->snapshotSearch;
         $pageSize = Yii::$app->request->get('pageSize', 15);
         return $searchModel->searchPublic(Yii::$app->request->queryParams, $pageSize);
     }
@@ -144,7 +166,11 @@ class ServerController extends Controller
      *     ),
      *     @OA\Response(
      *         response=200,
-     *         description="返回用户组内的场景快照列表"
+     *         description="返回用户组内的场景快照列表",
+     *         @OA\JsonContent(
+     *             type="array",
+     *             @OA\Items(ref="#/components/schemas/Snapshot")
+     *         )
      *     ),
      *     @OA\Response(response=401, description="未授权")
      * )
@@ -154,7 +180,7 @@ class ServerController extends Controller
         $userId = Yii::$app->user->id;
         $pageSize = Yii::$app->request->get('pageSize', 15);
         
-        $searchModel = new SnapshotSearch();
+        $searchModel = clone $this->snapshotSearch;
         return $searchModel->searchGroup(Yii::$app->request->queryParams, $userId, $pageSize);
     }
 
@@ -187,14 +213,18 @@ class ServerController extends Controller
      *     ),
      *     @OA\Response(
      *         response=200,
-     *         description="返回用户私有场景快照列表"
+     *         description="返回用户私有场景快照列表",
+     *         @OA\JsonContent(
+     *             type="array",
+     *             @OA\Items(ref="#/components/schemas/Snapshot")
+     *         )
      *     ),
      *     @OA\Response(response=401, description="未授权")
      * )
      */
     public function actionPrivate()
     {
-        $searchModel = new SnapshotSearch();
+        $searchModel = clone $this->snapshotSearch;
         $pageSize = Yii::$app->request->get('pageSize', 15);
         return $searchModel->searchPrivate(Yii::$app->request->queryParams, Yii::$app->user->id, $pageSize);
     }
@@ -206,13 +236,14 @@ class ServerController extends Controller
      *     tags={"Server"},
      *     @OA\Response(
      *         response=200,
-     *         description="返回所有类型为 Classify 的标签列表"
+     *         description="返回所有类型为 Classify 的标签列表",
+     *         @OA\JsonContent(type="array", @OA\Items(ref="#/components/schemas/Tags"))
      *     )
      * )
      */
     public function actionTags()
     {
-        $searchModel = new TagsSearch();
+        $searchModel = clone $this->tagsSearch;
         $dataProvider = $searchModel->search(Yii::$app->request->queryParams);
         //返回所有type为Classify 的
         $dataProvider->query->andWhere(['type' => 'Classify']);
@@ -243,7 +274,8 @@ class ServerController extends Controller
      *     ),
      *     @OA\Response(
      *         response=200,
-     *         description="返回快照详情"
+     *         description="返回快照详情",
+     *         @OA\JsonContent(ref="#/components/schemas/Snapshot")
      *     ),
      *     @OA\Response(response=400, description="参数错误或快照不存在")
      * )

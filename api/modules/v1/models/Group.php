@@ -8,8 +8,24 @@ use yii\behaviors\TimestampBehavior;
 use yii\db\Expression;
 
 use yii\behaviors\BlameableBehavior;
+use OpenApi\Annotations as OA;
+
 /**
  * This is the model class for table "group".
+ *
+ * @OA\Schema(
+ *     schema="Group",
+ *     title="群组",
+ *     description="Group model",
+ *     @OA\Property(property="id", type="integer", description="ID"),
+ *     @OA\Property(property="name", type="string", description="群组名称"),
+ *     @OA\Property(property="info", type="string", description="信息"),
+ *     @OA\Property(property="description", type="string", description="描述"),
+ *     @OA\Property(property="image_id", type="integer", description="图片ID"),
+ *     @OA\Property(property="user_id", type="integer", description="创建者ID"),
+ *     @OA\Property(property="created_at", type="string", format="date-time", description="创建时间"),
+ *     @OA\Property(property="updated_at", type="string", format="date-time", description="更新时间")
+ * )
  *
  * @property int $id
  * @property string $created_at

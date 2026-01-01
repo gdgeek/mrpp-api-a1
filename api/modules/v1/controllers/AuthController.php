@@ -93,7 +93,8 @@ class AuthController extends \yii\rest\Controller
    *             @OA\Property(property="success", type="boolean", example=true),
    *             @OA\Property(property="message", type="string", example="keyToToken"),
    *             @OA\Property(property="nickname", type="string", description="用户昵称"),
-   *             @OA\Property(property="token", type="string", description="JWT令牌")
+   *             @OA\Property(property="token", type="string", description="JWT令牌"),
+   *             @OA\Property(property="user", ref="#/components/schemas/User")
    *         )
    *     ),
    *     @OA\Response(response=400, description="key无效或用户不存在")
@@ -108,7 +109,7 @@ class AuthController extends \yii\rest\Controller
     if (!$user) {
       throw new BadRequestHttpException("no user");
     }
-    return ['success' => true, 'message' => "keyToToken", 'nickname'=>$user->nickname, 'token' => $user->token()];
+    return ['success' => true, 'message' => "keyToToken", 'nickname'=>$user->nickname, 'token' => $user->token(), 'user' => $user];
   }
 
   /**
@@ -131,7 +132,8 @@ class AuthController extends \yii\rest\Controller
    *             @OA\Property(property="success", type="boolean", example=true),
    *             @OA\Property(property="message", type="string", example="login"),
    *             @OA\Property(property="nickname", type="string", description="用户昵称"),
-   *             @OA\Property(property="token", type="string", description="JWT令牌")
+   *             @OA\Property(property="token", type="string", description="JWT令牌"),
+   *             @OA\Property(property="user", ref="#/components/schemas/User")
    *         )
    *     ),
    *     @OA\Response(response=400, description="用户名或密码错误")
@@ -158,7 +160,8 @@ class AuthController extends \yii\rest\Controller
     }
 
 
-    return ['success' => true, 'message' => "login", 'nickname'=>$user->nickname, 'token' => $user->token()];
+
+    return ['success' => true, 'message' => "login", 'nickname'=>$user->nickname, 'token' => $user->token(), 'user' => $user];
   }
 
 }

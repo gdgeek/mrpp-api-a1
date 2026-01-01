@@ -9,8 +9,26 @@ use yii\behaviors\BlameableBehavior;
 use yii\behaviors\TimestampBehavior;
 use yii\db\Expression;
 use yii\db\ActiveRecord;
+use OpenApi\Annotations as OA;
+
 /**
  * This is the model class for table "snapshot".
+ *
+ * @OA\Schema(
+ *     schema="Snapshot",
+ *     title="场景快照",
+ *     description="场景数据的快照模型",
+ *     @OA\Property(property="id", type="integer", description="ID"),
+ *     @OA\Property(property="verse_id", type="integer", description="场景ID"),
+ *     @OA\Property(property="uuid", type="string", description="UUID"),
+ *     @OA\Property(property="code", type="string", description="代码/标识"),
+ *     @OA\Property(property="data", type="string", description="JSON数据内容"),
+ *     @OA\Property(property="metas", type="string", description="元数据"),
+ *     @OA\Property(property="resources", type="string", description="资源链接"),
+ *     @OA\Property(property="created_at", type="string", format="date-time", description="创建时间"),
+ *     @OA\Property(property="created_by", type="integer", description="创建人ID"),
+ *     @OA\Property(property="managers", type="string", description="管理者列表"),
+ * )
  *
  * @property int $id
  * @property int $verse_id

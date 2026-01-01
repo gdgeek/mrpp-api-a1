@@ -42,3 +42,40 @@ jobs:
           push: ${{ github.event_name != 'pull_request' }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+
+  run-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.4"
+          extensions: mbstring, intl, pdo, pdo_sqlite
+          coverage: none
+
+      - name: Install Dependencies
+        run: |
+          cd api
+          composer install --prefer-dist --no-progress
+
+      - name: Security Audit
+        run: |
+          cd api
+          composer audit
+
+      # We need config files for tests to run
+      - name: Prepare Config
+        run: |
+          cp files/api/config/test.php api/config/test.php
+          # Create a test_db.php that uses sqlite memory for CI
+          echo "<?php return ['class' => 'yii\db\Connection', 'dsn' => 'sqlite::memory:', 'charset' => 'utf8'];" > api/config/test_db.php
+          # We also need params.php
+          cp files/api/config/params.php api/config/params.php
+
+      - name: Run Tests
+        run: |
+          cd api
+          vendor/bin/codecept run unit

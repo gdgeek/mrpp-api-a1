@@ -1,11 +1,20 @@
 <?php
 
-namespace app\modules\v1\models;
-
 use Yii;
+use OpenApi\Annotations as OA;
 
 /**
  * This is the model class for table "tags".
+ *
+ * @OA\Schema(
+ *     schema="Tags",
+ *     title="标签",
+ *     description="标签模型",
+ *     @OA\Property(property="id", type="integer", description="ID"),
+ *     @OA\Property(property="name", type="string", description="名称"),
+ *     @OA\Property(property="key", type="string", description="唯一标识"),
+ *     @OA\Property(property="type", type="string", description="类型")
+ * )
  *
  * @property int $id
  * @property string|null $name

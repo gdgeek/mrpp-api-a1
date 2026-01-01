@@ -7,8 +7,32 @@ use yii\web\BadRequestHttpException;
 use yii\helpers\HtmlPurifier;
 use yii\rest\ActiveController;
 use Yii;
+use OpenApi\Annotations as OA;
+
+use app\components\policies\VersePolicy;
+
+/**
+ * @OA\Tag(
+ *     name="Verse",
+ *     description="场景元数据接口"
+ * )
+ */
 class VerseController extends ActiveController
 {
+    private VersePolicy $versePolicy;
+    private VerseSearch $verseSearch;
+
+    public function __construct(
+        $id,
+        $module,
+        VersePolicy $versePolicy,
+        VerseSearch $verseSearch,
+        $config = []
+    ) {
+        $this->versePolicy = $versePolicy;
+        $this->verseSearch = $verseSearch;
+        parent::__construct($id, $module, $config);
+    }
 
     public $modelClass = 'app\modules\v1\models\Verse';
     public function behaviors()
@@ -29,14 +53,56 @@ class VerseController extends ActiveController
         return $actions;
     }
 
+    /**
+     * Checks the privilege of the current user.
+     *
+     * @param string $action the ID of the action to be executed
+     * @param object $model the model to be accessed. If null, it means no specific model is being accessed.
+     * @param array $params additional parameters
+     * @throws \yii\web\ForbiddenHttpException if the user does not have access
+     */
+    public function checkAccess($action, $model = null, $params = [])
+    {
+        // Only check access for specific actions on a specific model
+        if ($model && in_array($action, ['view', 'update', 'delete'])) {
+            $user = Yii::$app->user->identity;
+            $can = false;
 
+            switch ($action) {
+                case 'view':
+                    $can = $this->versePolicy->canView($user, $model);
+                    break;
+                case 'update':
+                    $can = $this->versePolicy->canUpdate($user, $model);
+                    break;
+                case 'delete':
+                    $can = $this->versePolicy->canDelete($user, $model);
+                    break;
+            }
+
+            if (!$can) {
+                throw new \yii\web\ForbiddenHttpException("You are not allowed to $action this verse.");
+            }
+        }
+    }
+
+
+    /**
+     * @OA\Get(
+     *     path="/v1/verse/index",
+     *     summary="获取我的场景列表",
+     *     tags={"Verse"},
+     *     security={{"Bearer": {}}},
+     *     @OA\Response(
+     *         response=200,
+     *         description="成功",
+     *         @OA\JsonContent(type="array", @OA\Items(ref="#/components/schemas/Verse"))
+     *     )
+     * )
+     */
     public function actionIndex()
     {
-
-
-
-
-        $searchModel = new VerseSearch();
+        $searchModel = clone $this->verseSearch;
         $dataProvider = $searchModel->search(Yii::$app->request->queryParams);
         $dataProvider->query->andWhere(['author_id' => Yii::$app->user->id]);
 
@@ -56,9 +122,22 @@ class VerseController extends ActiveController
 
         return $dataProvider;
     }
+    /**
+     * @OA\Get(
+     *     path="/v1/verse/public",
+     *     summary="获取公开场景列表",
+     *     tags={"Verse"},
+     *     @OA\Parameter(name="tags", in="query", description="标签过滤", @OA\Schema(type="string")),
+     *     @OA\Response(
+     *         response=200,
+     *         description="成功",
+     *         @OA\JsonContent(type="array", @OA\Items(ref="#/components/schemas/Verse"))
+     *     )
+     * )
+     */
     public function actionPublic()
     {
-        $searchModel = new VerseSearch();
+        $searchModel = clone $this->verseSearch;
         $dataProvider = $searchModel->search(Yii::$app->request->queryParams);
 
         // 合并查询：直接在主查询中添加标签条件
@@ -84,7 +163,7 @@ class VerseController extends ActiveController
 
     public function actionOpen()
     {
-        $searchModel = new VerseSearch();
+        $searchModel = clone $this->verseSearch;
         $papeSize = Yii::$app->request->get('pageSize', 15);
         $dataProvider = $searchModel->search(Yii::$app->request->queryParams, $papeSize);
         $query = $dataProvider->query;
@@ -97,7 +176,7 @@ class VerseController extends ActiveController
             throw new BadRequestHttpException('缺乏 code 数据');
         }
         $code = Yii::$app->request->queryParams['code'];
-        $searchModel = new VerseSearch();
+        $searchModel = clone $this->verseSearch;
         $dataProvider = $searchModel->search(Yii::$app->request->queryParams);
         $query = $dataProvider->query;
 

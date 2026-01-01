@@ -5,7 +5,21 @@ namespace app\modules\v1\models;
 
 use yii\web\IdentityInterface;
 use Yii;
+use OpenApi\Annotations as OA;
 
+/**
+ * @OA\Schema(
+ *     schema="User",
+ *     title="用户",
+ *     description="User model",
+ *     @OA\Property(property="id", type="integer", description="ID"),
+ *     @OA\Property(property="username", type="string", description="用户名"),
+ *     @OA\Property(property="nickname", type="string", description="昵称"),
+ *     @OA\Property(property="email", type="string", description="邮箱"),
+ *     @OA\Property(property="created_at", type="integer", description="创建时间"),
+ *     @OA\Property(property="status", type="integer", description="状态")
+ * )
+ */
 class User extends \yii\db\ActiveRecord implements IdentityInterface
 {
     /**
