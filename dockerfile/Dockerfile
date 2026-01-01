@@ -3,6 +3,10 @@
 # Use PHP 8.4 with Apache for the base image
 FROM  php:8.4-apache
 
+# Set default environment variables
+ENV YII_ENV=prod
+ENV YII_DEBUG=false
+
 # Enable the Rewrite Apache mod
 RUN cd /etc/apache2/mods-enabled && \
     ln -s ../mods-available/rewrite.load && \
