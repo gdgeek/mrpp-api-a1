@@ -74,14 +74,13 @@ class SnapshotSearchTest extends Unit
     public function testSearchPublic()
     {
         $searchModel = new SnapshotSearch();
-        $params = [];
+        $params = ['tags' => '1,2,3'];
         $pageSize = 10;
         
         $dataProvider = $searchModel->searchPublic($params, $pageSize);
         $this->assertEquals(10, $dataProvider->getPagination()->getPageSize());
         
         // Test tag filtering logic construction
-        $searchModel->tags = "1,2,3";
         $dataProviderWithTags = $searchModel->searchPublic($params);
         // Verify no crash
         $this->assertInstanceOf('yii\data\ActiveDataProvider', $dataProviderWithTags);
