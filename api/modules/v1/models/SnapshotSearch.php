@@ -146,7 +146,7 @@ class SnapshotSearch extends Snapshot
         
         $dataProvider->query->andWhere(['verse_id' => $verseIdsSubQuery]);
         
-        $this->applyTagFilter($query);
+        $this->applyTagFilter($dataProvider->query);
 
         $dataProvider->query->cache(30);
         
