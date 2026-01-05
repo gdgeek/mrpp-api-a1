@@ -1,4 +1,4 @@
-name: Docker Build and Push
+name: CI/CD Pipeline
 
 on:
   push:
@@ -6,94 +6,25 @@ on:
   pull_request:
     branches: ["main"]
 
-env:
-  REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository }}
-
 jobs:
-  build-and-push:
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      packages: write
+  test:
+    uses: ./.github/workflows/run-tests.yml
 
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+  build:
+    needs: test
+    uses: ./.github/workflows/build-push.yml
+    with:
+      registry_ghcr: ghcr.io
+      registry_tencent: hkccr.ccs.tencentyun.com
+      image_name_tencent: gdgeek/a1
+    secrets:
+      TENCENT_CLOUD_USERNAME: ${{ secrets.TENCENT_CLOUD_USERNAME }}
+      TENCENT_CLOUD_PASSWORD: ${{ secrets.TENCENT_CLOUD_PASSWORD }}
 
-      - name: Log in to the Container registry
-        uses: docker/login-action@v3
-        with:
-          registry: ${{ env.REGISTRY }}
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Extract metadata (tags, labels) for Docker
-        id: meta
-        uses: docker/metadata-action@v5
-        with:
-          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
-
-      - name: Build and push Docker image
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          file: dockerfile/Dockerfile
-          push: ${{ github.event_name != 'pull_request' }}
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
-
-      - name: Notify Portainer Webhook
-        if: github.event_name != 'pull_request' # 仅在合并到主分支时通知
-        run: |
-          curl -X POST "${{ secrets.PORTAINER_WEBHOOK_URL }}"
-
-      - name: Notify WeCom
-        if: success()
-        run: |
-          curl 'https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key=${{ secrets.WECHAT_WEBHOOK_KEY }}' \
-           -H 'Content-Type: application/json' \
-           -d '
-           {
-                "msgtype": "markdown",
-                "markdown": {
-                    "content": "项目构建成功！\n>项目: ${{ github.repository }}\n>分支: ${{ github.ref }}\n>提交: ${{ github.sha }}"
-                }
-           }'
-
-  run-tests:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Setup PHP
-        uses: shivammathur/setup-php@v2
-        with:
-          php-version: "8.4"
-          extensions: mbstring, intl, pdo, pdo_sqlite
-          coverage: none
-
-      - name: Install Dependencies
-        run: |
-          cd api
-          composer install --prefer-dist --no-progress
-
-      - name: Security Audit
-        run: |
-          cd api
-          composer audit
-
-      # We need config files for tests to run
-      - name: Prepare Config
-        run: |
-          cp files/api/config/test.php api/config/test.php
-          # Create a test_db.php that uses sqlite memory for CI
-          echo "<?php return ['class' => 'yii\db\Connection', 'dsn' => 'sqlite::memory:', 'charset' => 'utf8'];" > api/config/test_db.php
-          # We also need params.php
-          cp files/api/config/params.php api/config/params.php
-
-      - name: Run Tests
-        run: |
-          cd api
-          vendor/bin/codecept run unit
+  deploy:
+    needs: build
+    if: github.event_name != 'pull_request'
+    uses: ./.github/workflows/deploy-notify.yml
+    secrets:
+      PORTAINER_WEBHOOK_URL: ${{ secrets.PORTAINER_WEBHOOK_URL }}
+      WECHAT_WEBHOOK_KEY: ${{ secrets.WECHAT_WEBHOOK_KEY }}

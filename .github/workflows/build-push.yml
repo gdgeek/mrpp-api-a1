@@ -1,0 +1,62 @@
+name: Build and Push
+
+on:
+  workflow_call:
+    inputs:
+      registry_ghcr:
+        required: true
+        type: string
+      registry_tencent:
+        required: true
+        type: string
+      image_name_tencent:
+        required: true
+        type: string
+    secrets:
+      TENCENT_CLOUD_USERNAME:
+        required: true
+      TENCENT_CLOUD_PASSWORD:
+        required: true
+
+jobs:
+  build:
+    name: Build and Push
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ inputs.registry_ghcr }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Log in to Tencent Cloud Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ inputs.registry_tencent }}
+          username: ${{ secrets.TENCENT_CLOUD_USERNAME }}
+          password: ${{ secrets.TENCENT_CLOUD_PASSWORD }}
+
+      - name: Extract metadata (tags, labels) for Docker
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: |
+            ${{ inputs.registry_ghcr }}/${{ github.repository }}
+            ${{ inputs.registry_tencent }}/${{ inputs.image_name_tencent }}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: dockerfile/Dockerfile
+          push: ${{ github.event_name != 'pull_request' }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
