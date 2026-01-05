@@ -51,6 +51,10 @@ jobs:
           images: |
             ${{ inputs.registry_ghcr }}/${{ github.repository }}
             ${{ inputs.registry_tencent }}/${{ inputs.image_name_tencent }}
+          tags: |
+            type=ref,event=branch
+            type=raw,value=latest,enable={{is_default_branch}}
+            type=sha,format=short,prefix=
 
       - name: Build and push Docker image
         uses: docker/build-push-action@v5
