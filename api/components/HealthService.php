@@ -73,8 +73,10 @@ class HealthService extends Component
         try {
             $db = Yii::$app->db;
 
-            // 设置连接超时
-            $db->pdo->setAttribute(\PDO::ATTR_TIMEOUT, self::DATABASE_TIMEOUT);
+            // 确保数据库连接已打开
+            if (!$db->isActive) {
+                $db->open();
+            }
 
             // 执行简单查询验证连接
             $db->createCommand('SELECT 1')->queryScalar();
