@@ -23,7 +23,7 @@ $config = [
     ],
 
     'as cors' => [
-        'class' => \yii\filters\Cors::className(),
+        'class' => \yii\filters\Cors::class,
         'cors' => [
             'Origin' => ['*'],
             'Access-Control-Request-Method' => ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'HEAD', 'OPTIONS'],
@@ -39,6 +39,9 @@ $config = [
         ],
     ],
     'components' => [
+        'healthService' => [
+            'class' => 'app\components\HealthService',
+        ],
         'redis' => [
             'class' => 'yii\redis\Connection',
             'hostname' => getenv('REDIS_HOST'),
@@ -111,6 +114,9 @@ $config = [
             'showScriptName' => false,
             'enableStrictParsing' => true,
             'rules' => [
+                // Health check route (无需认证)
+                'GET health' => 'health/index',
+                
                 // Swagger API 文档路由
                 'GET swagger' => 'swagger/index',
                 'GET swagger/json-schema' => 'swagger/json-schema',
