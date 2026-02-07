@@ -11,6 +11,8 @@ servers:
     description: Same host
 
 tags:
+  - name: Health
+    description: 健康检查接口（无需认证）
   - name: Meta
   - name: Auth
   - name: Common
@@ -176,7 +178,94 @@ components:
       type: object
       additionalProperties: true
 
+    HealthStatus:
+      type: object
+      description: 健康检查响应
+      required:
+        - status
+        - timestamp
+        - checks
+      properties:
+        status:
+          type: string
+          enum: [healthy, unhealthy]
+          description: 整体健康状态
+        timestamp:
+          type: string
+          format: date-time
+          description: ISO 8601 格式的检查时间
+        checks:
+          type: object
+          description: 各依赖服务的检查结果
+          properties:
+            database:
+              $ref: "#/components/schemas/DependencyCheck"
+            redis:
+              $ref: "#/components/schemas/DependencyCheck"
+
+    DependencyCheck:
+      type: object
+      description: 单项依赖检查结果
+      required:
+        - status
+        - responseTime
+      properties:
+        status:
+          type: string
+          enum: [up, down]
+          description: 依赖服务状态
+        responseTime:
+          type: integer
+          description: 响应时间（毫秒）
+        error:
+          type: string
+          description: 错误信息（仅当 status 为 down 时）
+
 paths:
+  /health:
+    get:
+      tags: [Health]
+      summary: 健康检查端点
+      description: |
+        检查服务及其依赖（数据库、Redis）的健康状态。
+        适用于 Docker/Kubernetes 健康探针（liveness/readiness probe）。
+        
+        **无需认证即可访问。**
+      responses:
+        "200":
+          description: 所有服务健康
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthStatus"
+              example:
+                status: healthy
+                timestamp: "2024-01-15T10:30:00+08:00"
+                checks:
+                  database:
+                    status: up
+                    responseTime: 5
+                  redis:
+                    status: up
+                    responseTime: 2
+        "503":
+          description: 服务不健康（至少一个依赖服务异常）
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthStatus"
+              example:
+                status: unhealthy
+                timestamp: "2024-01-15T10:30:00+08:00"
+                checks:
+                  database:
+                    status: down
+                    responseTime: 5001
+                    error: Connection timed out
+                  redis:
+                    status: up
+                    responseTime: 2
+
   /apple-app-site-association:
     get:
       tags: [Meta]
