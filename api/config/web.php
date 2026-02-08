@@ -20,7 +20,7 @@ $config = [
     ],
 
     'as cors' => [
-        'class' => \yii\filters\Cors::className(),
+        'class' => \yii\filters\Cors::class,
         'cors' => [
             'Origin' => ['*'],
             'Access-Control-Request-Method' => ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'HEAD', 'OPTIONS'],
