@@ -2,7 +2,7 @@ name: CI/CD Pipeline
 
 on:
   push:
-    branches: ["main"]
+    branches: ["main", "develop"]
   pull_request:
     branches: ["main"]
 
@@ -23,11 +23,3 @@ jobs:
     secrets:
       TENCENT_CLOUD_USERNAME: ${{ secrets.TENCENT_CLOUD_USERNAME }}
       TENCENT_CLOUD_PASSWORD: ${{ secrets.TENCENT_CLOUD_PASSWORD }}
-
-  deploy:
-    needs: build
-    if: github.event_name != 'pull_request'
-    uses: ./.github/workflows/deploy-notify.yml
-    secrets:
-      PORTAINER_WEBHOOK_URL: ${{ secrets.PORTAINER_WEBHOOK_URL }}
-      WECHAT_WEBHOOK_KEY: ${{ secrets.WECHAT_WEBHOOK_KEY }}

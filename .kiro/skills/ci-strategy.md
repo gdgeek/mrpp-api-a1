@@ -15,6 +15,7 @@ fileMatchPattern: '**/.github/workflows/*.yml'
 ## 触发条件
 
 - `push` 到 `main` 分支：完整流水线（测试 → 构建 → 部署）
+- `push` 到 `develop` 分支：测试 → 构建推送镜像（tag 为 `develop` 和 `短hash`），不触发部署
 - `pull_request` 到 `main` 分支：仅测试和构建，不触发部署
 
 ## 测试阶段（run-tests.yml）
@@ -40,20 +41,12 @@ fileMatchPattern: '**/.github/workflows/*.yml'
 ### Dockerfile 路径
 - `dockerfile/Dockerfile`
 
-## 部署阶段（deploy-notify.yml）
-
-仅在 push 事件（非 PR）时触发：
-- 调用 Portainer Webhook 自动部署到生产环境
-- 发送企业微信（WeCom）通知，包含项目、分支、提交信息
-
 ## 所需 Secrets
 
 | Secret | 用途 |
 |--------|------|
 | `TENCENT_CLOUD_USERNAME` | 腾讯云镜像仓库用户名 |
 | `TENCENT_CLOUD_PASSWORD` | 腾讯云镜像仓库密码 |
-| `PORTAINER_WEBHOOK_URL` | Portainer 部署 Webhook |
-| `WECHAT_WEBHOOK_KEY` | 企业微信机器人 Key |
 
 ## 注意事项
 
