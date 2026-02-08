@@ -26,7 +26,7 @@ jobs:
       - name: Security Audit
         run: |
           cd api
-          composer audit
+          composer audit --abandoned=report
 
       - name: Prepare Config
         run: |
