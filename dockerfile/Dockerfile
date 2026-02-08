@@ -1,7 +1,7 @@
 # Dockerfile-app
 
-# Use PHP 8.4 with Apache for the base image
-FROM  php:8.4-apache
+# Use PHP 8.5 with Apache for the base image
+FROM  php:8.5-apache
 
 # Set default environment variables
 ENV YII_ENV=prod
