@@ -14,14 +14,12 @@ use OpenApi\Annotations as OA;
  *     description="标签模型",
  *     @OA\Property(property="id", type="integer", description="ID"),
  *     @OA\Property(property="name", type="string", description="名称"),
- *     @OA\Property(property="key", type="string", description="唯一标识"),
- *     @OA\Property(property="type", type="string", description="类型")
+ *     @OA\Property(property="key", type="string", description="唯一标识")
  * )
  *
  * @property int $id
  * @property string|null $name
  * @property string|null $key
- * @property string $type
  *
  * @property MessageTags[] $messageTags
  * @property VerseTags[] $verseTags
@@ -42,8 +40,6 @@ class Tags extends \yii\db\ActiveRecord
     public function rules()
     {
         return [
-           
-            [['type'], 'string'],
             [['name', 'key'], 'string', 'max' => 255],
             [['key'], 'unique'],
         ];
@@ -58,7 +54,6 @@ class Tags extends \yii\db\ActiveRecord
             'id' => 'ID',
             'name' => 'Name',
             'key' => 'Key',
-            'type' => 'Type',
         ];
     }
 

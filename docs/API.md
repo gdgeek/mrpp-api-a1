@@ -236,13 +236,12 @@ GET /v1/server/snapshot?verse_id=10&expand=id,name,image
   {
     "id": 1,
     "name": "标签名称",
-    "key": "tag_key",
-    "type": "Classify"
+    "key": "tag_key"
   }
 ]
 ```
 
-**说明**: 只返回 `type` 为 `Classify` 的标签
+**说明**: 不按 `type` 筛选，返回所有标签并排除已停用的 `key=public` 标签。
 
 ---
 
