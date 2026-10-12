@@ -38,3 +38,8 @@ jobs:
         run: |
           cd api
           vendor/bin/codecept run unit
+
+      - name: Public property regression tests
+        run: |
+          cd api
+          vendor/bin/phpunit -c tests/public-filter.phpunit.xml

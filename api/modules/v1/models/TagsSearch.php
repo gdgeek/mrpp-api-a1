@@ -41,6 +41,7 @@ class TagsSearch extends Tags
     public function search($params)
     {
         $query = Tags::find();
+        $query->andWhere(['or', ['<>', 'tags.key', 'public'], ['tags.key' => null]]);
 
         // add conditions that should always apply here
 

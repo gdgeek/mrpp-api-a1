@@ -79,24 +79,7 @@ class PrivateController extends Controller
         $searchModel = new SnapshotSearch();
 
         $papeSize = Yii::$app->request->get('pageSize', defaultValue: 15);
-        $dataProvider = $searchModel->search(Yii::$app->request->queryParams, $papeSize);
-
-        $dataProvider->query->innerJoin('verse AS v1', 'v1.id = snapshot.verse_id')
-            ->andWhere(['in', 'v1.author_id', Yii::$app->user->id]);
-        // 处理额外的标签过滤
-        $tags = Yii::$app->request->get('tags');
-        // 如果tags参数存在，将其转换为数字数组
-        if ($tags) {
-            $tagsArray = array_map('intval', explode(',', $tags));
-            if (isset($tagsArray) && !empty($tagsArray)) {
-                // 假设有一个 verse_tags 表，包含 verse_id 和 tag_id 字段
-                $dataProvider->query->innerJoin('verse_tags AS vt2', 'vt2.verse_id = snapshot.verse_id')
-                    ->andWhere(['in', 'vt2.tags_id', $tagsArray])
-                    ->groupBy('snapshot.id'); // 这里推测分组字段为snapshot.id，根据实际情况调整
-            }
-        }
-
-        return $dataProvider;
+        return $searchModel->searchPrivate(Yii::$app->request->queryParams, Yii::$app->user->id, $papeSize);
     }
 
 }

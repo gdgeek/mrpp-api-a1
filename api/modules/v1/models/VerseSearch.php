@@ -5,6 +5,7 @@ namespace app\modules\v1\models;
 use app\modules\v1\models\Verse;
 use yii\base\Model;
 use yii\data\ActiveDataProvider;
+use app\components\SceneQueryFilters;
 
 /**
  * VerseSearch represents the model behind the search form of `api\modules\v1\models\Verse`.
@@ -41,6 +42,9 @@ class VerseSearch extends Verse
     public function search($params, $pageSize = 15)
     {
         $query = Verse::find();
+
+        SceneQueryFilters::applyPublic($query, 'verse.id', $params);
+        SceneQueryFilters::applyTags($query, 'verse.id', $params['tags'] ?? null);
 
      
         $dataProvider = new ActiveDataProvider([
