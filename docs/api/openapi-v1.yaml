@@ -5,6 +5,8 @@ info:
   description: |
     由当前代码仓库自动梳理的 v1 API 文档（基于 Yii2 `yii\rest\UrlRule` 与各 Controller 的 action）。
 
+    部署配置源为 files/api/config/web.php；下列 Public/Private/Snapshot/Verse 等历史 v1 路由当前在注释块内。当前 Server 与 V2 接口以 Controller Swagger 注释及 README 为准，本文件不代表路由已启用。
+
     注意：部分 Model（如 Verse/Snapshot）在 `fields()` 返回空数组，默认序列化可能返回 `{}`；需要通过 `expand` 查询参数显式展开字段。
 servers:
   - url: /
@@ -44,9 +46,20 @@ components:
       name: tags
       in: query
       required: false
-      description: 以逗号分隔的 tag id 列表，例如 `1,2,3`
+      description: 分类 ID 列表，逗号分隔，多个分类取并集。旧 key=public 标签不参与分类；仅传其 ID 返回空列表，混传仅按普通分类筛选。
       schema:
         type: string
+    PublicFilter:
+      name: public
+      in: query
+      required: false
+      description: |
+        按 property.key=public 筛选；与分类及原查询范围取交集。
+        不传保留原范围，1/true 要求公开属性，0/false 要求无公开属性。
+        公开范围下传 0/false 返回空列表，其他值或数组返回 HTTP 400。
+      schema:
+        type: string
+        enum: ["0", "1", "false", "true"]
     Page:
       name: page
       in: query
@@ -517,6 +530,7 @@ paths:
         - bearerAuth: []
       parameters:
         - $ref: "#/components/parameters/TagsCsv"
+        - $ref: "#/components/parameters/PublicFilter"
         - $ref: "#/components/parameters/Page"
         - $ref: "#/components/parameters/PageSize"
         - $ref: "#/components/parameters/Expand"
@@ -542,7 +556,7 @@ paths:
   /v1/public/by-uuid:
     get:
       tags: [Public]
-      summary: 按 uuid 获取公开 Snapshot（需要 public tag）
+      summary: 按 uuid 获取公开 Snapshot（需要 property.key=public）
       parameters:
         - name: uuid
           in: query
@@ -567,7 +581,7 @@ paths:
   /v1/public/by-verse-id:
     get:
       tags: [Public]
-      summary: 按 verse_id 获取公开 Snapshot（需要 public tag）
+      summary: 按 verse_id 获取公开 Snapshot（需要 property.key=public）
       parameters:
         - name: verse_id
           in: query
@@ -592,7 +606,7 @@ paths:
   /v1/public/by-id:
     get:
       tags: [Public]
-      summary: 按 snapshot.id 获取公开 Snapshot（需要 public tag）
+      summary: 按 snapshot.id 获取公开 Snapshot（需要 property.key=public）
       parameters:
         - name: id
           in: query
@@ -617,9 +631,10 @@ paths:
   /v1/public/list:
     get:
       tags: [Public]
-      summary: 公开 Snapshot 列表（需要 public tag）
+      summary: 公开 Snapshot 列表（需要 property.key=public）
       parameters:
         - $ref: "#/components/parameters/TagsCsv"
+        - $ref: "#/components/parameters/PublicFilter"
         - $ref: "#/components/parameters/Page"
         - $ref: "#/components/parameters/PageSize"
         - $ref: "#/components/parameters/Expand"
@@ -735,6 +750,7 @@ paths:
       summary: Snapshot 列表（支持 tags 过滤）
       parameters:
         - $ref: "#/components/parameters/TagsCsv"
+        - $ref: "#/components/parameters/PublicFilter"
         - $ref: "#/components/parameters/Page"
         - $ref: "#/components/parameters/Expand"
       responses:
@@ -759,9 +775,10 @@ paths:
   /v1/snapshot/public:
     get:
       tags: [Snapshot]
-      summary: 公开 Snapshot 列表（tags.key=public）
+      summary: 公开 Snapshot 列表（property.key=public）
       parameters:
         - $ref: "#/components/parameters/TagsCsv"
+        - $ref: "#/components/parameters/PublicFilter"
         - $ref: "#/components/parameters/Page"
         - $ref: "#/components/parameters/Expand"
       responses:
@@ -864,6 +881,7 @@ paths:
       summary: Verse 列表（按 author_id=当前用户 id 过滤）
       parameters:
         - $ref: "#/components/parameters/TagsCsv"
+        - $ref: "#/components/parameters/PublicFilter"
         - $ref: "#/components/parameters/Page"
         - $ref: "#/components/parameters/Expand"
       responses:
@@ -888,9 +906,10 @@ paths:
   /v1/verse/public:
     get:
       tags: [Verse]
-      summary: 公开 Verse 列表（tags.key=public）
+      summary: 公开 Verse 列表（property.key=public）
       parameters:
         - $ref: "#/components/parameters/TagsCsv"
+        - $ref: "#/components/parameters/PublicFilter"
         - $ref: "#/components/parameters/Page"
         - $ref: "#/components/parameters/Expand"
       responses:
@@ -917,6 +936,7 @@ paths:
       tags: [Verse]
       summary: open Verse 列表（存在 verse_open 关联）
       parameters:
+        - $ref: "#/components/parameters/PublicFilter"
         - $ref: "#/components/parameters/Page"
         - $ref: "#/components/parameters/PageSize"
         - $ref: "#/components/parameters/Expand"
@@ -944,6 +964,7 @@ paths:
       tags: [Verse]
       summary: 按 release code 获取 Verse（返回单个）
       parameters:
+        - $ref: "#/components/parameters/PublicFilter"
         - name: code
           in: query
           required: true

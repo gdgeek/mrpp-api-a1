@@ -1,8 +1,28 @@
-# API 文档（v1）
+# API 文档（A1 / Yii2）
 
 本文档基于当前仓库代码梳理（Yii2 REST + `yii\rest\UrlRule`）。对应的 OpenAPI 文件见：
 
 - [openapi-v1.yaml](openapi-v1.yaml)
+
+## 当前部署与历史接口
+
+Docker 构建把 [files/api/config/web.php](../../files/api/config/web.php) 复制为运行配置（见 [Dockerfile](../../dockerfile/Dockerfile)）。该配置启用 `/v1/server/*` 与 `/v2/snapshots`；下文记录的旧 `/v1/public`、`/v1/private`、`/v1/snapshot`、`/v1/verse` 等路由规则在配置的注释块中，不能据此认为线上已开放。本次不改变路由开关。
+
+## 公开属性与分类筛选
+
+公开只由场景关联的 `property.key=public` 决定（`verse_property`），与分类标签独立。`tags.key=public` 已停用：标签目录隐藏该记录，传入它的 ID 也不会按公开属性解释或作为分类命中。仅传旧 public 标签 ID 返回空列表；与普通分类 ID 混传时，仅普通分类参与筛选。其他分类之间保持 OR，同一个场景只返回一次。
+
+当前列表入口：
+
+- `GET /v1/server/public`：公开属性范围，匿名可用。
+- `GET /v1/server/checkin`：打卡属性范围，匿名可用。
+- `GET /v1/server/private`：当前作者范围，需 Bearer 登录。
+- `GET /v1/server/group`：当前用户组范围，需 Bearer 登录。
+- `GET /v2/snapshots?scope=public|checkin|private|group`：对应上述范围；private/group 仍要求登录。
+
+这些列表支持独立 `public=1` 或 `public=true`（存在公开属性）、`public=0` 或 `public=false`（没有公开属性），不传则保留原范围。参数与 `tags=2,3` 分类、作者/组范围取交集；公开范围再传 `public=0` 返回空列表。`public=`、`public=2`、`public[]=1` 等非法值返回 HTTP 400，不会自动转换为布尔值。Yii2 结果缓存包含生成的 SQL 和绑定参数，不同公开条件不会共享列表结果。
+
+例如：`GET /v1/server/private?public=1&tags=2,3&expand=id,verse_id` 查询当前作者已公开且属于分类 2 或 3 的快照。旧控制器中复用 SnapshotSearch / VerseSearch 的列表同样支持该筛选；旧 Public 详情始终要求公开属性，缺少属性或标识不存在时保留 HTTP 400。Verse 的查看策略允许属性公开或当前作者，旧 status/public 标签不授予查看权限。
 
 ## 基础信息
 
@@ -33,7 +53,7 @@
 
 ## 鉴权
 
-只有 `PrivateController` 显式开启了 JWT Bearer 鉴权：
+当前 Server 的 private/group 使用 JWT Bearer 鉴权，V2 的 private/group 要求登录。历史 `PrivateController` 也显式开启 JWT Bearer 鉴权：
 
 - [api/modules/v1/controllers/PrivateController.php](../../api/modules/v1/controllers/PrivateController.php)
 
@@ -49,7 +69,7 @@
 
 ## 端点清单
 
-下面列出所有在 [files/api/config/web.php](../../files/api/config/web.php) 里配置的 v1 端点，以及 Controller 实现情况。
+下面记录 v1 Controller 实现；历史路由是否启用以上述部署配置为准。
 
 ### Meta（非 v1）
 
@@ -102,7 +122,7 @@
 - `GET /v1/public/by-verse-id?verse_id=...&expand=...`
 - `GET /v1/public/list?page=1&pageSize=15&tags=1,2,3&expand=...`
 
-说明：这些查询都会限制为关联 verse 拥有 `tags.key=public`。
+说明：这些查询都会限制为关联 verse 拥有 `property.key=public`。
 
 ### Checkin
 
@@ -114,7 +134,7 @@
 
 - `GET /v1/tags`
 
-说明：只返回 `type=Classify` 的 tag。
+说明：只返回 `type=Classify` 的 tag，并排除旧 `key=public` 标签。
 
 ### Phototype
 
@@ -125,7 +145,7 @@
 ### Snapshot
 
 - `GET /v1/snapshot?page=1&tags=1,2,3&expand=...`
-- `GET /v1/snapshot/public?page=1&tags=1,2,3&expand=...`（限制 `tags.key=public`）
+- `GET /v1/snapshot/public?page=1&tags=1,2,3&expand=...`（限制 `property.key=public`）
 - `GET /v1/snapshot/by-uuid?uuid=...&expand=...`
 - `GET /v1/snapshot/by-verse-id?verse_id=...&expand=...`
 - `GET /v1/snapshot/{id}?expand=...`（ActiveController 默认 view）
@@ -135,7 +155,7 @@
 ### Verse
 
 - `GET /v1/verse?page=1&tags=1,2,3&expand=...`（内部按 `author_id=Yii::$app->user->id` 过滤）
-- `GET /v1/verse/public?page=1&tags=1,2,3&expand=...`（限制 `tags.key=public`）
+- `GET /v1/verse/public?page=1&tags=1,2,3&expand=...`（限制 `property.key=public`）
 - `GET /v1/verse/open?page=1&pageSize=15&expand=...`（存在 `verse_open` 记录）
 - `GET /v1/verse/release?code=...&expand=...`（返回单个 verse）
 - `GET /v1/verse/{id}?expand=...`（ActiveController 默认 view）
@@ -164,3 +184,15 @@ curl -s 'http://localhost/v1/private/list?page=1&pageSize=15&expand=id,uuid,vers
 ```bash
 curl -s 'http://localhost/v1/public/list?page=1&pageSize=15&expand=id,uuid,verse_id'
 ```
+
+
+## 隔离回归测试
+
+此测试仅使用 SQLite 内存数据库，不加载业务配置。已安装项目依赖时：
+
+```bash
+cd api
+php vendor/bin/phpunit -c tests/public-filter.phpunit.xml
+```
+
+也可通过 `A1_TEST_VENDOR=/absolute/path/to/vendor` 复用已安装 Yii2 与 PHPUnit 的依赖目录。覆盖属性公开、旧标签停用、分类 OR/公开 AND、作者/组边界、缓存、HTTP 400、公开详情和 VersePolicy。

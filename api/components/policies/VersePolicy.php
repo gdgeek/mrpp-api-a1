@@ -17,7 +17,7 @@ class VersePolicy
     public function canView(?User $user, Verse $verse): bool
     {
         // Public verses can be viewed by anyone
-        if ($verse->status === 1) { // Assuming 1 means Public
+        if ($verse->getPublic()) {
             return true;
         }
 

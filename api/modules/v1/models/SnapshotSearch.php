@@ -5,6 +5,7 @@ namespace app\modules\v1\models;
 use yii\base\Model;
 use yii\data\ActiveDataProvider;
 use app\modules\v1\models\Snapshot;
+use app\components\SceneQueryFilters;
 
 /**
  * SnapshotSearch represents the model behind the search form of `app\modules\v1\models\Snapshot`.
@@ -47,6 +48,9 @@ class SnapshotSearch extends Snapshot
     {
         $query = Snapshot::find();
 
+        SceneQueryFilters::applyPublic($query, 'snapshot.verse_id', $params);
+        SceneQueryFilters::applyTags($query, 'snapshot.verse_id', $params['tags'] ?? null);
+
         // add conditions that should always apply here
 
         $dataProvider = new ActiveDataProvider([
@@ -84,12 +88,11 @@ class SnapshotSearch extends Snapshot
         $dataProvider = $this->search($params);
         $query = $dataProvider->query;
 
-        // 链接tag表进行过滤。tag表的key为checkin,通过verse_tags链接
+        // Checkin remains a separate scene property.
         $query->innerJoin('verse_property AS vp', 'vp.verse_id  = snapshot.verse_id')
             ->innerJoin('property', 'property.id = vp.property_id')
             ->andWhere(['property.key' => 'checkin'])
             ->groupBy(['snapshot.id']);
- $this->applyTagFilter($query);
         return $dataProvider;
     }
 
@@ -98,11 +101,7 @@ class SnapshotSearch extends Snapshot
         $dataProvider = $this->search($params, $pageSize);
         $query = $dataProvider->query;
 
-        $query->innerJoin('verse_property AS vp1', 'vp1.verse_id = snapshot.verse_id')
-            ->innerJoin('property', 'property.id = vp1.property_id')
-            ->andWhere(['property.key' => 'public']);
-            
-        $this->applyTagFilter($query);
+        SceneQueryFilters::applyPublic($query, 'snapshot.verse_id', ['public' => true]);
         
         // 读取结果缓存 30 秒
         $query->cache(30);
@@ -117,8 +116,6 @@ class SnapshotSearch extends Snapshot
 
         $query->innerJoin('verse AS v1', 'v1.id = snapshot.verse_id')
             ->andWhere(['in', 'v1.author_id', $userId]);
-
-        $this->applyTagFilter($query);
 
         // 读取结果缓存 30 秒
         $query->cache(30);
@@ -146,23 +143,9 @@ class SnapshotSearch extends Snapshot
         
         $dataProvider->query->andWhere(['verse_id' => $verseIdsSubQuery]);
         
-        $this->applyTagFilter($dataProvider->query);
-
         $dataProvider->query->cache(30);
         
         return $dataProvider;
     }
 
-    protected function applyTagFilter($query)
-    {
-        if ($this->tags) {
-            $tagsArray = array_map('intval', explode(',', $this->tags));
-            if (!empty($tagsArray)) {
-                // 假设有一个 verse_tags 表，包含 verse_id 和 tag_id 字段
-                $query->innerJoin('verse_tags AS vt2', 'vt2.verse_id = snapshot.verse_id')
-                    ->andWhere(['in', 'vt2.tags_id', $tagsArray])
-                    ->groupBy('snapshot.id');
-            }
-        }
-    }
 }
