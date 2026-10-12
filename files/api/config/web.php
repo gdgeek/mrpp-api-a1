@@ -7,7 +7,7 @@ $config = [
     'id' => 'restful',
     'basePath' => dirname(__DIR__),
     'timeZone' => 'Asia/Shanghai',
-    'bootstrap' => ['log'],
+    'bootstrap' => ['log', 'identityAuthority'],
     'controllerNamespace' => 'app\controllers',
     'aliases' => [
         '@bower' => '@vendor/bower-asset',
@@ -39,6 +39,7 @@ $config = [
         ],
     ],
     'components' => [
+        'identityAuthority' => ['class' => \app\components\IdentityAuthority::class],
         'healthService' => [
             'class' => 'app\components\HealthService',
         ],
@@ -86,6 +87,7 @@ $config = [
             'class' => 'app\components\Helper',
         ],
         'user' => [
+            'class' => \app\components\IdentityWebUser::class,
             'identityClass' => 'app\modules\v1\models\User',
             'enableAutoLogin' => true,
         ],
@@ -146,6 +148,8 @@ $config = [
                     'extraPatterns' => [
                         'POST login' => 'login',
                         'POST refresh' => 'refresh',
+                        'POST key-to-token' => 'key-to-token',
+                        'POST logout' => 'logout',
                     ],
                 ],
                

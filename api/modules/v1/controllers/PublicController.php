@@ -3,6 +3,7 @@ namespace app\modules\v1\controllers;
 use app\modules\v1\models\SnapshotSearch;
 use yii\web\BadRequestHttpException;
 use app\modules\v1\models\Snapshot;
+use app\components\SceneQueryFilters;
 
 use bizley\jwt\JwtHttpBearerAuth;
 use Yii;
@@ -31,51 +32,15 @@ class PublicController extends Controller
 
     public function actionByUuid($uuid)
     {
-
-
-        $model = Snapshot::find()
-            ->where(['snapshot.uuid' => $uuid])
-            ->innerJoin('verse_tags AS vt1', 'vt1.verse_id = snapshot.verse_id')
-            ->innerJoin('tags', 'tags.id = vt1.tags_id')
-            ->andWhere(['tags.key' => 'public'])
-            ->one();
-
-        if ($model === null) {
-            throw new BadRequestHttpException('Snapshot not found.');
-        }
-
-        return $model;
+        return $this->findPublicSnapshot(['snapshot.uuid' => $uuid]);
     }
     public function actionById($id)
     {
-        $model = Snapshot::find()
-            ->where(['snapshot.id' => $id])
-            ->innerJoin('verse_tags AS vt1', 'vt1.verse_id = snapshot.verse_id')
-            ->innerJoin('tags', 'tags.id = vt1.tags_id')
-            ->andWhere(['tags.key' => 'public'])
-            ->one();
-
-        if ($model === null) {
-            throw new BadRequestHttpException('Snapshot not found.');
-        }
-
-        return $model;
+        return $this->findPublicSnapshot(['snapshot.id' => $id]);
     }
     public function actionByVerseId($verse_id)
     {
-
-        $model = Snapshot::find()
-            ->where(['snapshot.verse_id' => $verse_id])
-            ->innerJoin('verse_tags AS vt1', 'vt1.verse_id = snapshot.verse_id')
-            ->innerJoin('tags', 'tags.id = vt1.tags_id')
-            ->andWhere(['tags.key' => 'public'])
-            ->one();
-
-        if ($model === null) {
-            throw new BadRequestHttpException('Snapshot not found.');
-        }
-
-        return $model;
+        return $this->findPublicSnapshot(['snapshot.verse_id' => $verse_id]);
     }
 
     public function actionList()
@@ -84,27 +49,18 @@ class PublicController extends Controller
 
         $papeSize = Yii::$app->request->get('pageSize', 15);
 
-        $dataProvider = $searchModel->search(Yii::$app->request->queryParams, $papeSize);
+        return $searchModel->searchPublic(Yii::$app->request->queryParams, $papeSize);
+    }
 
-
-
-        $dataProvider->query->innerJoin('verse_tags AS vt1', 'vt1.verse_id = snapshot.verse_id')
-            ->innerJoin('tags', 'tags.id = vt1.tags_id')
-            ->andWhere(['tags.key' => 'public']);
-        // 处理额外的标签过滤
-        $tags = Yii::$app->request->get('tags');
-        // 如果tags参数存在，将其转换为数字数组
-        if ($tags) {
-            $tagsArray = array_map('intval', explode(',', string: $tags));
-            if (isset($tagsArray) && !empty($tagsArray)) {
-                // 假设有一个 verse_tags 表，包含 verse_id 和 tag_id 字段
-                $dataProvider->query->innerJoin('verse_tags AS vt2', 'vt2.verse_id = snapshot.verse_id')
-                    ->andWhere(['in', 'vt2.tags_id', $tagsArray])
-                    ->groupBy('snapshot.id'); // 这里推测分组字段为snapshot.id，根据实际情况调整
-            }
+    private function findPublicSnapshot(array $condition): Snapshot
+    {
+        $query = Snapshot::find()->where($condition);
+        SceneQueryFilters::applyPublic($query, 'snapshot.verse_id', ['public' => true]);
+        $model = $query->one();
+        if ($model === null) {
+            throw new BadRequestHttpException('Snapshot not found.');
         }
-
-        return $dataProvider;
+        return $model;
     }
 
 }

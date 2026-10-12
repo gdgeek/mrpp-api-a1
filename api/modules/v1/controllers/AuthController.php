@@ -7,6 +7,7 @@ use yii\web\BadRequestHttpException;
 use app\modules\v1\models\User;
 use Yii;
 use OpenApi\Annotations as OA;
+use app\components\IdentityAuthority;
 
 /**
  * 认证控制器
@@ -18,6 +19,12 @@ use OpenApi\Annotations as OA;
  */
 class AuthController extends \yii\rest\Controller
 {
+  public function actionLogout()
+  {
+    if (!IdentityAuthority::enabled()) throw new \yii\web\NotFoundHttpException();
+    $refreshToken = IdentityAuthority::credential(Yii::$app->request->post('refreshToken'), 'refreshToken');
+    return IdentityAuthority::run(fn() => IdentityAuthority::provider()->logout($refreshToken));
+  }
 
 
   public function behaviors()
@@ -59,6 +66,11 @@ class AuthController extends \yii\rest\Controller
     $refreshToken = Yii::$app->request->post("refreshToken");
     if (!$refreshToken) {
       throw new BadRequestHttpException("refreshToken is required");
+    }
+    if (IdentityAuthority::enabled()) {
+      $refreshToken = IdentityAuthority::credential($refreshToken, 'refreshToken');
+      $result = IdentityAuthority::run(fn() => IdentityAuthority::provider()->refresh($refreshToken, false, IdentityAuthority::requestContext()));
+      return IdentityAuthority::response($result, 'refresh', false);
     }
     $user = User::findByRefreshToken($refreshToken);
     if (!$user) {
@@ -105,6 +117,11 @@ class AuthController extends \yii\rest\Controller
     if (!$key) {
       throw new BadRequestHttpException("key is required");
     }
+    if (IdentityAuthority::enabled()) {
+      $key = IdentityAuthority::credential($key, 'key');
+      $result = IdentityAuthority::run(fn() => IdentityAuthority::provider()->loginCode($key, false, IdentityAuthority::requestContext()));
+      return IdentityAuthority::response($result, 'keyToToken');
+    }
     $user = User::findByUserLinked($key);
     if (!$user) {
       throw new BadRequestHttpException("no user");
@@ -149,6 +166,12 @@ class AuthController extends \yii\rest\Controller
     $password = Yii::$app->request->post("password");
     if (!$password) {
       throw new BadRequestHttpException("password is required");
+    }
+    if (IdentityAuthority::enabled()) {
+      $username = IdentityAuthority::credential($username, 'username', 255);
+      $password = IdentityAuthority::credential($password, 'password', 1024);
+      $result = IdentityAuthority::run(fn() => IdentityAuthority::provider()->login($username, $password, IdentityAuthority::requestContext()));
+      return IdentityAuthority::response($result, 'login');
     }
 
     $user = User::findByUsername($username);

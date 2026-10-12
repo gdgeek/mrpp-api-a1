@@ -10,11 +10,11 @@ fileMatchPattern: '**/.github/workflows/*.yml'
 项目采用 GitHub Actions 可复用工作流（reusable workflows）架构，主入口为 `docker-publish.yml`，按顺序调用：
 1. `run-tests.yml` — 运行测试
 2. `build-push.yml` — 构建并推送 Docker 镜像
-3. `deploy-notify.yml` — 部署通知
+镜像构建通过后，由 Portainer 单独部署并验收；本流水线不调用部署或消息通知。
 
 ## 触发条件
 
-- `push` 到 `main` 分支：完整流水线（测试 → 构建 → 部署）
+- `push` 到 `main` 或 `publish` 分支：测试 → 构建推送镜像，不自动部署
 - `push` 到 `develop` 分支：测试 → 构建推送镜像（tag 为 `develop` 和 `短hash`），不触发部署
 - `pull_request` 到 `main` 分支：仅测试和构建，不触发部署
 
@@ -25,6 +25,7 @@ fileMatchPattern: '**/.github/workflows/*.yml'
 - 使用 SQLite 内存数据库替代真实数据库
 - 运行 `composer audit` 安全审计
 - 运行 `vendor/bin/codecept run unit` 单元测试
+- 运行 `vendor/bin/phpunit -c tests/public-filter.phpunit.xml` 公开属性及分类筛选回归
 - Prepare Config 步骤会从 `files/` 目录复制测试配置，并生成 SQLite 内存数据库配置覆盖 `test_db.php`
 
 ## Docker 镜像构建规则（build-push.yml）
@@ -36,7 +37,7 @@ fileMatchPattern: '**/.github/workflows/*.yml'
 ### Tag 策略（由 docker/metadata-action 生成）
 - `分支名`（如 main）— 所有 push 触发
 - `短hash`（7位 commit SHA）— 所有 push 触发
-- `latest` — 仅默认分支（main）push 时附加
+- `latest` — 仅 `publish` 分支 push 时附加，避免 main/publish 并发构建覆盖正式标签
 
 ### Dockerfile 路径
 - `dockerfile/Dockerfile`

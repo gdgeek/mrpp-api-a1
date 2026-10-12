@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<phpunit bootstrap="public-filter-bootstrap.php" colors="true" cacheResult="false">
+    <testsuites>
+        <testsuite name="Property public and classification filters">
+            <directory>public-filter</directory>
+        </testsuite>
+    </testsuites>
+</phpunit>

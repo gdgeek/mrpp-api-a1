@@ -4,7 +4,7 @@ use app\modules\v1\models\SnapshotSearch;
 use app\modules\v1\models\TagsSearch;
 use yii\web\BadRequestHttpException;
 use app\modules\v1\models\Snapshot;
-use bizley\jwt\JwtHttpBearerAuth;
+use app\components\IdentityJwtHttpBearerAuth as JwtHttpBearerAuth;
 use yii\filters\auth\CompositeAuth;
 use yii\rest\Controller;
 use Yii;
@@ -85,6 +85,12 @@ class ServerController extends Controller
      *         required=false,
      *         @OA\Schema(type="integer", default=15)
      *     ),
+     *     @OA\Parameter(
+     *         name="public", in="query", required=false,
+     *         description="按 property.key=public 筛选；0/1/false/true，与分类和原查询范围取交集。公开范围下 0/false 返回空列表。",
+     *         @OA\Schema(type="string", enum={"0", "1", "false", "true"})
+     *     ),
+     *     @OA\Response(response=400, description="public 参数非法"),
      *     @OA\Response(
      *         response=200,
      *         description="返回打卡场景快照列表",
@@ -123,10 +129,16 @@ class ServerController extends Controller
      *     @OA\Parameter(
      *         name="tags",
      *         in="query",
-     *         description="标签ID列表，逗号分隔",
+     *         description="分类标签ID列表，逗号分隔（多个分类取并集；旧 public 标签不参与分类）",
      *         required=false,
      *         @OA\Schema(type="string", example="1,2,3")
      *     ),
+     *     @OA\Parameter(
+     *         name="public", in="query", required=false,
+     *         description="按 property.key=public 筛选；0/1/false/true，与分类和原查询范围取交集。公开范围下 0/false 返回空列表。",
+     *         @OA\Schema(type="string", enum={"0", "1", "false", "true"})
+     *     ),
+     *     @OA\Response(response=400, description="public 参数非法"),
      *     @OA\Response(
      *         response=200,
      *         description="返回公开场景快照列表",
@@ -164,6 +176,12 @@ class ServerController extends Controller
      *         required=false,
      *         @OA\Schema(type="integer", default=15)
      *     ),
+     *     @OA\Parameter(
+     *         name="public", in="query", required=false,
+     *         description="按 property.key=public 筛选；0/1/false/true，与分类和原查询范围取交集。公开范围下 0/false 返回空列表。",
+     *         @OA\Schema(type="string", enum={"0", "1", "false", "true"})
+     *     ),
+     *     @OA\Response(response=400, description="public 参数非法"),
      *     @OA\Response(
      *         response=200,
      *         description="返回用户组内的场景快照列表",
@@ -207,10 +225,16 @@ class ServerController extends Controller
      *     @OA\Parameter(
      *         name="tags",
      *         in="query",
-     *         description="标签ID列表，逗号分隔",
+     *         description="分类标签ID列表，逗号分隔（多个分类取并集；旧 public 标签不参与分类）",
      *         required=false,
      *         @OA\Schema(type="string", example="1,2,3")
      *     ),
+     *     @OA\Parameter(
+     *         name="public", in="query", required=false,
+     *         description="按 property.key=public 筛选；0/1/false/true，与分类和原查询范围取交集。公开范围下 0/false 返回空列表。",
+     *         @OA\Schema(type="string", enum={"0", "1", "false", "true"})
+     *     ),
+     *     @OA\Response(response=400, description="public 参数非法"),
      *     @OA\Response(
      *         response=200,
      *         description="返回用户私有场景快照列表",

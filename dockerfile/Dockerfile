@@ -38,7 +38,7 @@ WORKDIR /var/www/html/api
 COPY api/composer.json api/composer.lock ./
 
 # Install dependencies
-RUN composer update --no-dev --optimize-autoloader --no-interaction
+RUN composer install --no-dev --optimize-autoloader --no-interaction --no-scripts
 
 # Copy the rest of the application
 COPY ./api/ .

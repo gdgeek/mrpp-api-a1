@@ -2,9 +2,16 @@ name: CI/CD Pipeline
 
 on:
   push:
-    branches: ["main", "develop"]
+    branches: ["main", "develop", "publish", "codex/identity-online-dev-20261012"]
   pull_request:
     branches: ["main"]
+  workflow_dispatch:
+    inputs:
+      publish_candidate:
+        description: 'Publish only an SHA-pinned A1 development candidate; no deployment'
+        type: boolean
+        required: false
+        default: false
 
 jobs:
   test:
@@ -12,6 +19,10 @@ jobs:
 
   build:
     needs: test
+    if: >-
+      github.event_name == 'push' && (
+        github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop' || github.ref == 'refs/heads/publish'
+      )
     permissions:
       contents: read
       packages: write
@@ -23,3 +34,66 @@ jobs:
     secrets:
       TENCENT_CLOUD_USERNAME: ${{ secrets.TENCENT_CLOUD_USERNAME }}
       TENCENT_CLOUD_PASSWORD: ${{ secrets.TENCENT_CLOUD_PASSWORD }}
+
+  candidate:
+    name: Publish fixed development candidate
+    needs: test
+    if: >-
+      (github.event_name == 'workflow_dispatch' && inputs.publish_candidate == true) ||
+      (github.event_name == 'push' && github.ref == 'refs/heads/codex/identity-online-dev-20261012')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/login-action@v3
+        with:
+          registry: hkccr.ccs.tencentyun.com
+          username: ${{ secrets.TENCENT_CLOUD_USERNAME }}
+          password: ${{ secrets.TENCENT_CLOUD_PASSWORD }}
+      - name: Record fixed source revision
+        env:
+          CANDIDATE_SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "${CANDIDATE_SHA}"
+          printf '%s\n' "${CANDIDATE_SHA}" > api/GIT_COMMIT
+          TZ='Asia/Shanghai' date '+%Y-%m-%d %H:%M:%S' > api/BUILD_TIME
+      - name: Build and publish candidate only
+        id: image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: dockerfile/Dockerfile
+          platforms: linux/amd64
+          push: true
+          labels: |
+            org.opencontainers.image.source=https://github.com/gdgeek/mrpp-api-a1
+            org.opencontainers.image.revision=${{ github.sha }}
+          tags: hkccr.ccs.tencentyun.com/gdgeek/a1:candidate-${{ github.sha }}
+      - name: Save candidate provenance
+        env:
+          CANDIDATE_SHA: ${{ github.sha }}
+          CANDIDATE_DIGEST: ${{ steps.image.outputs.digest }}
+          CANDIDATE_RUN: ${{ github.run_id }}
+        run: |
+          set -euo pipefail
+          [[ "${CANDIDATE_DIGEST}" =~ ^sha256:[0-9a-f]{64}$ ]]
+          python3 - <<'PY'
+          import json, os
+          e = os.environ
+          result = {"status": "published-candidate-not-live", "revision": e["CANDIDATE_SHA"],
+                    "runId": e["CANDIDATE_RUN"], "platform": "linux/amd64",
+                    "image": "hkccr.ccs.tencentyun.com/gdgeek/a1:candidate-" + e["CANDIDATE_SHA"],
+                    "digest": e["CANDIDATE_DIGEST"], "productionUntouched": True}
+          with open("candidate-image.json", "w") as f:
+              json.dump(result, f, indent=2)
+              f.write("\n")
+          PY
+          printf 'A1 candidate: `%s@%s`\nNo mutable tags or deployment were performed.\n' \
+            "hkccr.ccs.tencentyun.com/gdgeek/a1:candidate-${CANDIDATE_SHA}" "${CANDIDATE_DIGEST}" >> "${GITHUB_STEP_SUMMARY}"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: a1-candidate-image-provenance-${{ github.sha }}
+          path: candidate-image.json

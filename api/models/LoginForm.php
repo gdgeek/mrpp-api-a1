@@ -4,6 +4,8 @@ namespace app\models;
 
 use Yii;
 use yii\base\Model;
+use app\components\IdentityAuthority;
+use app\components\IdentityWebUser;
 
 /**
  * LoginForm is the model behind the login form.
@@ -18,6 +20,7 @@ class LoginForm extends Model
     public $rememberMe = true;
 
     private $_user = false;
+    private ?array $identityResult = null;
 
 
     /**
@@ -44,6 +47,17 @@ class LoginForm extends Model
      */
     public function validatePassword($attribute, $params)
     {
+        if (IdentityAuthority::enabled()) {
+            if (!$this->hasErrors()) {
+                try {
+                    $this->identityResult = IdentityAuthority::run(fn() => IdentityAuthority::provider()->login(
+                        (string)$this->username, (string)$this->password, IdentityAuthority::requestContext()));
+                } catch (\yii\web\UnauthorizedHttpException $exception) {
+                    $this->addError($attribute, 'Incorrect username or password.');
+                }
+            }
+            return;
+        }
         if (!$this->hasErrors()) {
             $user = $this->getUser();
 
@@ -59,6 +73,13 @@ class LoginForm extends Model
      */
     public function login()
     {
+        if (IdentityAuthority::enabled()) {
+            if (!$this->validate()) return false;
+            if (!Yii::$app->user instanceof IdentityWebUser || $this->identityResult === null) {
+                throw new \yii\web\HttpException(503, 'Identity UI session is unavailable.');
+            }
+            return Yii::$app->user->loginWithIdentityTokens($this->identityResult['authTokens'], $this->rememberMe ? 3600 * 24 * 30 : 0);
+        }
         if ($this->validate()) {
             return Yii::$app->user->login($this->getUser(), $this->rememberMe ? 3600*24*30 : 0);
         }
@@ -72,6 +93,9 @@ class LoginForm extends Model
      */
     public function getUser()
     {
+        if (IdentityAuthority::enabled()) {
+            return $this->identityResult === null ? null : \app\modules\v1\models\User::fromIdentitySubject($this->identityResult['subject']);
+        }
         if ($this->_user === false) {
             $this->_user = User::findByUsername($this->username);
         }

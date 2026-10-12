@@ -140,6 +140,15 @@ class Verse extends \yii\db\ActiveRecord
     {
         return $this->hasOne(VerseCode::className(), ['verse_id' => 'id']);
     }
+
+    public function getPublic(): bool
+    {
+        return (new \yii\db\Query())
+            ->from(['public_vp' => 'verse_property'])
+            ->innerJoin(['public_p' => 'property'], 'public_p.id = public_vp.property_id')
+            ->where(['public_vp.verse_id' => $this->id, 'public_p.key' => 'public'])
+            ->exists();
+    }
     public function fields()
     {
         return [];

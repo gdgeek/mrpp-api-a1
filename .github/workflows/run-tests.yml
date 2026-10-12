@@ -16,12 +16,13 @@ jobs:
         with:
           php-version: "8.5"
           extensions: mbstring, intl, pdo, pdo_sqlite
+          ini-values: register_argc_argv=On, output_buffering=4096
           coverage: none
 
       - name: Install Dependencies
         run: |
           cd api
-          composer update --prefer-dist --no-progress
+          composer install --prefer-dist --no-progress --no-interaction --no-scripts
 
       - name: Security Audit
         run: |
@@ -38,3 +39,13 @@ jobs:
         run: |
           cd api
           vendor/bin/codecept run unit
+
+      - name: Public property regression tests
+        run: |
+          cd api
+          vendor/bin/phpunit -c tests/public-filter.phpunit.xml
+
+      - name: Independent Identity boundary tests
+        run: |
+          cd api
+          vendor/bin/phpunit -c tests/identity-authority.phpunit.xml

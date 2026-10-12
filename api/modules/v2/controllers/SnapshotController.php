@@ -10,6 +10,7 @@ use yii\rest\Controller;
 use yii\web\ForbiddenHttpException;
 use yii\web\NotFoundHttpException;
 use OpenApi\Annotations as OA;
+use Yii;
 
 /**
  * @OA\Tag(
@@ -67,6 +68,17 @@ class SnapshotController extends Controller
      *         required=false,
      *         @OA\Schema(type="integer", default=15)
      *     ),
+     *     @OA\Parameter(
+     *         name="public", in="query", required=false,
+     *         description="按 property.key=public 筛选；0/1/false/true，与分类和原查询范围取交集。公开范围下 0/false 返回空列表。",
+     *         @OA\Schema(type="string", enum={"0", "1", "false", "true"})
+     *     ),
+     *     @OA\Parameter(
+     *         name="tags", in="query", required=false,
+     *         description="分类标签ID列表，逗号分隔；多个分类取并集，旧 public 标签不参与分类",
+     *         @OA\Schema(type="string", example="2,3")
+     *     ),
+     *     @OA\Response(response=400, description="public 参数非法"),
      *     @OA\Response(
      *         response=200,
      *         description="返回场景快照列表",

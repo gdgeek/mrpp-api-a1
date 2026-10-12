@@ -33,6 +33,7 @@ class User extends \yii\base\BaseObject implements \yii\web\IdentityInterface
      */
     public static function findIdentity($id)
     {
+        if (\app\components\IdentityAuthority::enabled()) return \app\modules\v1\models\User::findIdentity($id);
         return isset(self::$users[$id]) ? new static(self::$users[$id]) : null;
     }
 
@@ -41,6 +42,7 @@ class User extends \yii\base\BaseObject implements \yii\web\IdentityInterface
      */
     public static function findIdentityByAccessToken($token, $type = null)
     {
+        if (\app\components\IdentityAuthority::enabled()) return \app\modules\v1\models\User::findIdentityByAccessToken($token, $type);
         foreach (self::$users as $user) {
             if ($user['accessToken'] === $token) {
                 return new static($user);
@@ -58,6 +60,7 @@ class User extends \yii\base\BaseObject implements \yii\web\IdentityInterface
      */
     public static function findByUsername($username)
     {
+        \app\components\IdentityAuthority::forbidLocalCredentials();
         foreach (self::$users as $user) {
             if (strcasecmp($user['username'], $username) === 0) {
                 return new static($user);
@@ -80,6 +83,7 @@ class User extends \yii\base\BaseObject implements \yii\web\IdentityInterface
      */
     public function getAuthKey()
     {
+        if (\app\components\IdentityAuthority::enabled()) return '';
         return $this->authKey;
     }
 
@@ -88,6 +92,7 @@ class User extends \yii\base\BaseObject implements \yii\web\IdentityInterface
      */
     public function validateAuthKey($authKey)
     {
+        if (\app\components\IdentityAuthority::enabled()) return false;
         return $this->authKey === $authKey;
     }
 
@@ -99,6 +104,7 @@ class User extends \yii\base\BaseObject implements \yii\web\IdentityInterface
      */
     public function validatePassword($password)
     {
+        \app\components\IdentityAuthority::forbidLocalCredentials();
         return $this->password === $password;
     }
 }

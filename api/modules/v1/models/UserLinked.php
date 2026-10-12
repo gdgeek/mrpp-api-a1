@@ -18,6 +18,42 @@ use yii\db\Expression;
 class UserLinked extends \yii\db\ActiveRecord
 {
 
+    public function save($runValidation = true, $attributeNames = null)
+    {
+        \app\components\IdentityAuthority::forbidLocalCredentials();
+        return parent::save($runValidation, $attributeNames);
+    }
+
+    public function beforeSave($insert)
+    {
+        \app\components\IdentityAuthority::forbidLocalCredentials();
+        return parent::beforeSave($insert);
+    }
+
+    public function beforeDelete()
+    {
+        \app\components\IdentityAuthority::forbidLocalCredentials();
+        return parent::beforeDelete();
+    }
+
+    public static function updateAll($attributes, $condition = '', $params = [])
+    {
+        \app\components\IdentityAuthority::forbidLocalCredentials();
+        return parent::updateAll($attributes, $condition, $params);
+    }
+
+    public static function updateAllCounters($counters, $condition = '', $params = [])
+    {
+        \app\components\IdentityAuthority::forbidLocalCredentials();
+        return parent::updateAllCounters($counters, $condition, $params);
+    }
+
+    public static function deleteAll($condition = null, $params = [])
+    {
+        \app\components\IdentityAuthority::forbidLocalCredentials();
+        return parent::deleteAll($condition, $params);
+    }
+
         public function behaviors()
     {
         return [

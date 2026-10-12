@@ -45,10 +45,12 @@ $this->params['breadcrumbs'][] = $this->title;
 
             <?php ActiveForm::end(); ?>
 
+            <?php if (!\app\components\IdentityAuthority::enabled()): ?>
             <div style="color:#999;">
                 You may login with <strong>admin/admin</strong> or <strong>demo/demo</strong>.<br>
                 To modify the username/password, please check out the code <code>app\models\User::$users</code>.
             </div>
+            <?php endif; ?>
 
         </div>
     </div>

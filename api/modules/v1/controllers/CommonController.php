@@ -7,6 +7,7 @@ use yii\web\BadRequestHttpException;
 use app\modules\v1\models\User;
 //PlayerToken
 use app\modules\v1\models\PlayerToken;
+use app\components\IdentityAuthority;
 
 class CommonController extends Controller
 {
@@ -38,6 +39,11 @@ class CommonController extends Controller
         if (!$refreshToken) {
             throw new BadRequestHttpException('Refresh token is required.');
         }
+        if (IdentityAuthority::enabled()) {
+            $refreshToken = IdentityAuthority::credential($refreshToken, 'refreshToken');
+            $result = IdentityAuthority::run(fn() => IdentityAuthority::provider()->refresh($refreshToken, false, IdentityAuthority::requestContext()));
+            return ['nickname' => $result['subject']['nickname'], 'token' => $result['authTokens']];
+        }
         $user = User::findByRefreshToken($refreshToken);
         if (!$user) {
             throw new BadRequestHttpException('User not found.');
@@ -58,12 +64,15 @@ class CommonController extends Controller
             return [
                 'success' => true,
                 'message' => "report success",
-                'user' => $this->getUserData(),
+                'user' => IdentityAuthority::enabled() ? $user : $this->getUserData(),
                 'data' => [
                     'watermark' => false,
                 ]
             ];
         } catch (\Exception $e) {
+            // Authority failures must retain their HTTP status and cannot be
+            // disguised as a successful response or trigger a local writer.
+            if (IdentityAuthority::enabled()) throw $e;
 
             return [
                 'success' => false,

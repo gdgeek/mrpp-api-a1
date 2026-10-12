@@ -10,6 +10,7 @@ use Yii;
 use OpenApi\Annotations as OA;
 
 use app\components\policies\VersePolicy;
+use app\components\SceneQueryFilters;
 
 /**
  * @OA\Tag(
@@ -93,6 +94,12 @@ class VerseController extends ActiveController
      *     summary="获取我的场景列表",
      *     tags={"Verse"},
      *     security={{"Bearer": {}}},
+     *     @OA\Parameter(
+     *         name="public", in="query", required=false,
+     *         description="按 property.key=public 筛选；0/1/false/true，与分类和原查询范围取交集。公开范围下 0/false 返回空列表。",
+     *         @OA\Schema(type="string", enum={"0", "1", "false", "true"})
+     *     ),
+     *     @OA\Response(response=400, description="public 参数非法"),
      *     @OA\Response(
      *         response=200,
      *         description="成功",
@@ -107,19 +114,6 @@ class VerseController extends ActiveController
         $dataProvider->query->andWhere(['author_id' => Yii::$app->user->id]);
 
 
-        $tags = Yii::$app->request->get('tags');
-
-        // 如果tags参数存在，将其转换为数字数组
-        if ($tags) {
-            $tagsArray = array_map('intval', explode(',', $tags));
-            if (isset($tagsArray) && !empty($tagsArray)) {
-                // 假设有一个 verse_tags 表，包含 verse_id 和 tag_id 字段
-                $dataProvider->query->innerJoin('verse_tags', 'verse_tags.verse_id = verse.id')
-                    ->andWhere(['in', 'verse_tags.tags_id', $tagsArray])
-                    ->groupBy('verse.id'); // 避免重复结果
-            }
-        }
-
         return $dataProvider;
     }
     /**
@@ -128,6 +122,12 @@ class VerseController extends ActiveController
      *     summary="获取公开场景列表",
      *     tags={"Verse"},
      *     @OA\Parameter(name="tags", in="query", description="标签过滤", @OA\Schema(type="string")),
+     *     @OA\Parameter(
+     *         name="public", in="query", required=false,
+     *         description="按 property.key=public 筛选；0/1/false/true，与分类和原查询范围取交集。公开范围下 0/false 返回空列表。",
+     *         @OA\Schema(type="string", enum={"0", "1", "false", "true"})
+     *     ),
+     *     @OA\Response(response=400, description="public 参数非法"),
      *     @OA\Response(
      *         response=200,
      *         description="成功",
@@ -140,23 +140,7 @@ class VerseController extends ActiveController
         $searchModel = clone $this->verseSearch;
         $dataProvider = $searchModel->search(Yii::$app->request->queryParams);
 
-        // 合并查询：直接在主查询中添加标签条件
-        $dataProvider->query->innerJoin('verse_tags AS vt_public', 'vt_public.verse_id = verse.id')
-            ->innerJoin('tags AS t_public', 't_public.id = vt_public.tags_id')
-            ->andWhere(['t_public.key' => 'public']);
-
-        // 处理额外的标签过滤
-        $tags = Yii::$app->request->get('tags');
-        // 如果tags参数存在，将其转换为数字数组
-        if ($tags) {
-            $tagsArray = array_map('intval', explode(',', $tags));
-            if (isset($tagsArray) && !empty($tagsArray)) {
-                // 假设有一个 verse_tags 表，包含 verse_id 和 tag_id 字段
-                $dataProvider->query->innerJoin('verse_tags', 'verse_tags.verse_id = verse.id')
-                    ->andWhere(['in', 'verse_tags.tags_id', $tagsArray])
-                    ->groupBy('verse.id'); // 避免重复结果
-            }
-        }
+        SceneQueryFilters::applyPublic($dataProvider->query, 'verse.id', ['public' => true]);
 
         return $dataProvider;
     }

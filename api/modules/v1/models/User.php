@@ -6,6 +6,7 @@ namespace app\modules\v1\models;
 use yii\web\IdentityInterface;
 use Yii;
 use OpenApi\Annotations as OA;
+use app\components\IdentityAuthority;
 
 /**
  * @OA\Schema(
@@ -30,6 +31,68 @@ class User extends \yii\db\ActiveRecord implements IdentityInterface
         return 'user';
     }
     public $password;
+
+    public function attributes()
+    {
+        return IdentityAuthority::enabled()
+            ? ['id', 'username', 'nickname', 'email', 'status', 'created_at', 'updated_at', 'roles']
+            : parent::attributes();
+    }
+
+    public static function fromIdentitySubject(array $subject): self
+    {
+        $user = new static();
+        $user->setAttributes(array_intersect_key($subject, array_flip($user->attributes())), false);
+        return $user;
+    }
+
+    public function save($runValidation = true, $attributeNames = null)
+    {
+        IdentityAuthority::forbidLocalCredentials();
+        return parent::save($runValidation, $attributeNames);
+    }
+
+    public function insert($runValidation = true, $attributes = null)
+    {
+        IdentityAuthority::forbidLocalCredentials();
+        return parent::insert($runValidation, $attributes);
+    }
+
+    public function update($runValidation = true, $attributeNames = null)
+    {
+        IdentityAuthority::forbidLocalCredentials();
+        return parent::update($runValidation, $attributeNames);
+    }
+
+    public function beforeSave($insert)
+    {
+        IdentityAuthority::forbidLocalCredentials();
+        return parent::beforeSave($insert);
+    }
+
+    public function beforeDelete()
+    {
+        IdentityAuthority::forbidLocalCredentials();
+        return parent::beforeDelete();
+    }
+
+    public static function updateAll($attributes, $condition = '', $params = [])
+    {
+        IdentityAuthority::forbidLocalCredentials();
+        return parent::updateAll($attributes, $condition, $params);
+    }
+
+    public static function updateAllCounters($counters, $condition = '', $params = [])
+    {
+        IdentityAuthority::forbidLocalCredentials();
+        return parent::updateAllCounters($counters, $condition, $params);
+    }
+
+    public static function deleteAll($condition = null, $params = [])
+    {
+        IdentityAuthority::forbidLocalCredentials();
+        return parent::deleteAll($condition, $params);
+    }
     /**
      * {@inheritdoc}
      */
@@ -53,10 +116,12 @@ class User extends \yii\db\ActiveRecord implements IdentityInterface
     }
     public function getAuthKey()
     {
+        if (IdentityAuthority::enabled()) return '';
         return $this->auth_key;
     }
     public function validateAuthKey($authKey)
     {
+        if (IdentityAuthority::enabled()) return false;
         return $this->authKey === $authKey;
     }
    
@@ -66,6 +131,7 @@ class User extends \yii\db\ActiveRecord implements IdentityInterface
     }
      public static function findByUserLinked($key):User|null
     {
+        IdentityAuthority::forbidLocalCredentials();
         $link = UserLinked::find()->where(['key' => $key])->one();
         if (!$link) {
             throw new \yii\web\UnauthorizedHttpException('Linked key is invalid.');
@@ -89,6 +155,7 @@ class User extends \yii\db\ActiveRecord implements IdentityInterface
 
     public static function findByRefreshToken($refreshToken): User|null
     {
+        IdentityAuthority::forbidLocalCredentials();
      
 
         $token = RefreshToken::find()->where(['key' => $refreshToken])->one();
@@ -127,6 +194,7 @@ class User extends \yii\db\ActiveRecord implements IdentityInterface
 
     public function token()
     {
+        IdentityAuthority::forbidLocalCredentials();
         
         $token = new RefreshToken();
         $token->user_id = $this->id;
@@ -143,6 +211,7 @@ class User extends \yii\db\ActiveRecord implements IdentityInterface
     }
     public static function findByUsername($username)
     {
+        IdentityAuthority::forbidLocalCredentials();
         return static::find()->where(['username' => $username])->one();
 
     }
@@ -155,12 +224,14 @@ class User extends \yii\db\ActiveRecord implements IdentityInterface
      */
     public function validatePassword($password)
     {
+        IdentityAuthority::forbidLocalCredentials();
         return Yii::$app->security->validatePassword($password, $this->password_hash);
     }
 
     //生成token
     public function generateAccessToken($now = null, $expires = null)
     {
+        IdentityAuthority::forbidLocalCredentials();
 
         if ($now == null) {
             $now = new \DateTimeImmutable('now', new \DateTimeZone(\Yii::$app->timeZone));
@@ -183,10 +254,17 @@ class User extends \yii\db\ActiveRecord implements IdentityInterface
 
     public static function findIdentity($id)
     {
+        if (IdentityAuthority::enabled()) {
+            $id = filter_var($id, FILTER_VALIDATE_INT);
+            if ($id === false || $id <= 0) return null;
+            $subject = IdentityAuthority::run(fn() => IdentityAuthority::provider()->subjectById($id));
+            return static::fromIdentitySubject($subject);
+        }
         return static::find()->where(['id' => $id])->one();
     }
     public static function findIdentityByAccessToken($token, $type = null)
     {
+        if (IdentityAuthority::enabled()) return IdentityAuthority::verify((string)$token);
         $claims = Yii::$app->jwt->parse($token)->claims();
         $uid = $claims->get('uid');
         $user = static::findIdentity($uid);
