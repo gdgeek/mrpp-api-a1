@@ -260,7 +260,7 @@ class ServerController extends Controller
      *     tags={"Server"},
      *     @OA\Response(
      *         response=200,
-     *         description="返回所有类型为 Classify 的标签列表",
+     *         description="返回所有标签，不按 type 筛选，排除已停用的 public 标签",
      *         @OA\JsonContent(type="array", @OA\Items(ref="#/components/schemas/Tags"))
      *     )
      * )
@@ -269,9 +269,6 @@ class ServerController extends Controller
     {
         $searchModel = clone $this->tagsSearch;
         $dataProvider = $searchModel->search(Yii::$app->request->queryParams);
-        //返回所有type为Classify 的
-        $dataProvider->query->andWhere(['type' => 'Classify']);
-
         // 读取结果缓存 30 秒
         $dataProvider->query->cache(30);
         return $dataProvider;

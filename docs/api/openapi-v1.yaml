@@ -157,8 +157,6 @@ components:
         key:
           type: string
           nullable: true
-        type:
-          type: string
     PhototypeInfo:
       type: object
       properties:
@@ -686,7 +684,7 @@ paths:
   /v1/tags:
     get:
       tags: [Tags]
-      summary: Tag 列表（固定筛选 type=Classify）
+      summary: Tag 列表（不按 type 筛选，排除旧 key=public 标签）
       parameters:
         - name: id
           in: query

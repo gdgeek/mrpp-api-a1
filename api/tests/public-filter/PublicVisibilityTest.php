@@ -8,13 +8,16 @@ use app\modules\v1\controllers\PrivateController;
 use app\modules\v1\controllers\PublicController;
 use app\modules\v1\controllers\ServerController;
 use app\modules\v1\controllers\SnapshotController;
+use app\modules\v1\controllers\TagsController;
 use app\modules\v1\controllers\VerseController;
 use app\modules\v1\models\SnapshotSearch;
+use app\modules\v1\models\Tags;
 use app\modules\v1\models\TagsSearch;
 use app\modules\v1\models\User;
 use app\modules\v1\models\Verse;
 use app\modules\v1\models\VerseSearch;
 use app\modules\v2\controllers\SnapshotController as V2SnapshotController;
+use app\modules\v2\controllers\TagsController as V2TagsController;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use Yii;
@@ -75,7 +78,7 @@ final class PublicVisibilityTest extends TestCase
                 'resources' => 'text', 'type' => 'integer', 'name' => 'string',
                 'description' => 'text', 'image' => 'text',
             ],
-            'tags' => ['id' => 'pk', 'name' => 'string', 'key' => 'string', 'type' => 'string'],
+            'tags' => ['id' => 'pk', 'name' => 'string', 'key' => 'string'],
             'verse_tags' => ['verse_id' => 'integer', 'tags_id' => 'integer'],
             'property' => ['id' => 'pk', 'key' => 'string'],
             'verse_property' => ['verse_id' => 'integer', 'property_id' => 'integer'],
@@ -97,10 +100,10 @@ final class PublicVisibilityTest extends TestCase
         }
         $rows = [
             'tags' => [
-                ['id' => 1, 'name' => 'Old public', 'key' => 'public', 'type' => 'Status'],
-                ['id' => 2, 'name' => 'Category A', 'key' => 'a', 'type' => 'Classify'],
-                ['id' => 3, 'name' => 'Category B', 'key' => 'b', 'type' => 'Classify'],
-                ['id' => 4, 'name' => 'Legacy category', 'key' => null, 'type' => 'Classify'],
+                ['id' => 1, 'name' => 'Old public', 'key' => 'public'],
+                ['id' => 2, 'name' => 'Category A', 'key' => 'a'],
+                ['id' => 3, 'name' => 'Category B', 'key' => 'b'],
+                ['id' => 4, 'name' => 'Legacy category', 'key' => null],
             ],
             'property' => [['id' => 1, 'key' => 'public'], ['id' => 2, 'key' => 'checkin']],
             'verse_property' => [
@@ -232,12 +235,43 @@ final class PublicVisibilityTest extends TestCase
         self::assertSame(1, (int) $controller->actionByVerseId(1)->id);
     }
 
-    public function testTagsDirectoryNeverReturnsPublic(): void
+    public function testTagsDirectoryIgnoresTypeAndNeverReturnsPublic(): void
     {
+        // Simulate the legacy schema only to populate its filtered query cache.
+        Yii::$app->db->createCommand()->addColumn('tags', 'type', 'string')->execute();
+        Yii::$app->db->schema->refreshTableSchema('tags');
         // Exclusion follows the key even if the obsolete record was Classify.
-        Yii::$app->db->createCommand()->update('tags', ['type' => 'Classify'], ['id' => 1])->execute();
-        self::assertSame([2, 3, 4], $this->ids((new TagsSearch())->search([])));
-        self::assertSame([], $this->ids((new TagsSearch())->search(['TagsSearch' => ['type' => 'Status']])));
+        Yii::$app->db->createCommand()->update('tags', ['type' => 'Classify'], ['id' => [1, 2]])->execute();
+        Yii::$app->db->createCommand()->update('tags', ['type' => 'Status'], ['id' => 3])->execute();
+
+        // Populate the old query's cache before exercising the new directory.
+        $oldDirectory = (new TagsSearch())->search([]);
+        $oldDirectory->query->andWhere(['type' => 'Classify'])->cache(30);
+        self::assertSame([2], $this->ids($oldDirectory));
+
+        // The new application must work after the type column is removed.
+        // Yii2's SQLite query builder does not expose modern SQLite DROP COLUMN.
+        Yii::$app->db->createCommand('ALTER TABLE {{%tags}} DROP COLUMN [[type]]')->execute();
+        Yii::$app->db->schema->refreshTableSchema('tags');
+        self::assertArrayNotHasKey('type', Tags::getTableSchema()->columns);
+        $tag = Tags::findOne(2);
+        self::assertTrue($tag->validate());
+        self::assertSame(['id' => 2, 'name' => 'Category A', 'key' => 'a'], $tag->toArray());
+        $tag->name = 'Updated category';
+        self::assertTrue($tag->save());
+        self::assertSame('Updated category', Tags::findOne(2)->name);
+
+        $v1 = new TagsController('tags', Yii::$app);
+        $server = new ServerController('server', Yii::$app, new SnapshotSearch(), new TagsSearch());
+        $v2 = new V2TagsController('tags', Yii::$app, new TagsSearch());
+        foreach ([[], ['TagsSearch' => ['type' => 'Classify']], ['TagsSearch' => ['type' => 'Status']], []] as $params) {
+            Yii::$app->request->setQueryParams($params);
+            self::assertSame([2, 3, 4], $this->ids((new TagsSearch())->search($params)));
+            self::assertSame([2, 3, 4], $this->ids($v1->actionIndex()));
+            self::assertSame([2, 3, 4], $this->ids($server->actionTags()));
+            self::assertSame([2, 3, 4], $this->ids($v2->actionIndex()));
+        }
+        self::assertSame([2], $this->ids((new TagsSearch())->search(['TagsSearch' => ['key' => 'a']])));
         self::assertSame([], $this->ids((new TagsSearch())->search(['TagsSearch' => ['key' => 'public']])));
     }
 
