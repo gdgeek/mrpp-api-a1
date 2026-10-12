@@ -134,7 +134,7 @@ Docker 构建把 [files/api/config/web.php](../../files/api/config/web.php) 复�
 
 - `GET /v1/tags`
 
-说明：只返回 `type=Classify` 的 tag，并排除旧 `key=public` 标签。
+说明：不按 `type` 筛选，返回所有 tag，并排除旧 `key=public` 标签。
 
 ### Phototype
 

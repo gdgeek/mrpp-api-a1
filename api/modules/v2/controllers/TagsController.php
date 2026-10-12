@@ -47,7 +47,7 @@ class TagsController extends Controller
      * @OA\Get(
      *     path="/v2/tags",
      *     summary="获取标签列表 (read-only)",
-     *     description="获取所有类型为 Classify 的标签",
+     *     description="获取所有标签，不按 type 筛选，排除已停用的 public 标签",
      *     tags={"v2 Tags"},
      *     @OA\Response(
      *         response=200,
@@ -64,7 +64,6 @@ class TagsController extends Controller
         $searchModel = clone $this->tagsSearch;
         $dataProvider = $searchModel->search(Yii::$app->request->queryParams);
         
-        $dataProvider->query->andWhere(['type' => 'Classify']);
         $dataProvider->query->cache(30);
         
         return $dataProvider;

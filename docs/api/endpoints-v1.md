@@ -62,7 +62,7 @@
 
 | 方法 | 路径 | 鉴权 | 参数 | 备注 |
 |---|---|---|---|---|
-| GET | `/v1/tags` | 否 | `id?`, `name?`, `key?` | 固定筛选 `type=Classify` |
+| GET | `/v1/tags` | 否 | `id?`, `name?`, `key?` | 不按 `type` 筛选，排除旧 `key=public` 标签 |
 
 ## Phototype
 
