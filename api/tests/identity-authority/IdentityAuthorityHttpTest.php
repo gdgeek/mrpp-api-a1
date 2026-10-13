@@ -42,6 +42,16 @@ if ($path === '/internal/yii3/refresh') {
     if (($body['refreshToken'] ?? '') === 'outage') { http_response_code(503); echo '{}'; return; }
     if (($body['refreshToken'] ?? '') === 'invalid') { http_response_code(401); echo '{}'; return; }
     if (($_SERVER['HTTP_IDEMPOTENCY_KEY'] ?? '') !== 'same-operation') { http_response_code(400); echo '{}'; return; }
+    if (($body['refreshToken'] ?? '') === 'legacy') {
+        $endpoint = $body['sourceEndpoint'] ?? '';
+        if (!in_array($endpoint, ['/v1/auth/refresh', '/v1/common/report'], true)) { http_response_code(400); echo '{}'; return; }
+        $oldToken = $tokens; $oldToken['expires'] = '2026-10-12 07:32:11';
+        $oldBody = $endpoint === '/v1/auth/refresh'
+            ? ['success'=>true,'message'=>'refresh','nickname'=>'original','token'=>$oldToken]
+            : ['success'=>true,'message'=>'report success','user'=>['nickname'=>'original','token'=>$oldToken],'data'=>['watermark'=>false]];
+        echo json_encode(['authTokens'=>$tokens,'subject'=>$subject,'legacyResponse'=>[
+            'version'=>'legacy-refresh-response-v1','consumer'=>'a1','endpoint'=>$endpoint,'body'=>$oldBody]]); return;
+    }
     echo json_encode(['authTokens'=>$tokens,'subject'=>$subject]); return;
 }
 if ($path === '/internal/yii3/login-code') {
@@ -90,8 +100,20 @@ PHP);
     public function testRealHttpInvalidAndUnavailableResponsesStayDistinctAndDoNotFallback(): void
     {
         foreach (['invalid' => 401, 'outage' => 503] as $input => $status) {
-            try { $this->client()->refresh($input, true, ['idempotencyKey' => 'same-operation']); self::fail('Must fail.'); }
+            try { $this->client()->refresh($input, false, ['idempotencyKey' => 'same-operation']); self::fail('Must fail.'); }
             catch (RuntimeException $error) { self::assertSame($status, $error->getCode()); }
         }
+    }
+
+    public function testRealHttpKeepsBothOriginalA1ResponseBodies(): void
+    {
+        $client = $this->client();
+        $auth = $client->refresh('legacy', false, ['idempotencyKey' => 'same-operation']);
+        $report = $client->refresh('legacy', false, ['idempotencyKey' => 'same-operation'], '/v1/common/report');
+        self::assertSame('original', $auth['legacyResponseBody']['nickname']);
+        self::assertSame('2026-10-12 07:32:11', $auth['legacyResponseBody']['token']['expires']);
+        self::assertSame($auth['legacyResponseBody']['token'], $report['legacyResponseBody']['user']['token']);
+        self::assertSame(['watermark' => false], $report['legacyResponseBody']['data']);
+        self::assertSame('2026-10-12 20:00:00', $auth['authTokens']['expires']);
     }
 }

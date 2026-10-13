@@ -27,6 +27,7 @@ final class IdentityAuthorityTest extends TestCase
         'email' => null, 'status' => 10, 'roles' => ['user'], 'password_hash' => 'must-never-be-returned'];
     private array $tokens = ['accessToken' => 'identity-access', 'refreshToken' => 'identity-refresh', 'expires' => '2026-10-12T12:00:00.000Z'];
     private IdentityAuthorityClient $client;
+    private ?array $legacyResponse = null;
 
     protected function setUp(): void
     {
@@ -44,7 +45,8 @@ final class IdentityAuthorityTest extends TestCase
                     '/v1/auth/login', '/internal/legacy-php-session/exchange' => ['token' => $this->tokens],
                     '/v1/auth/logout' => ['revoked' => true],
                     '/internal/auth/verify-access-token', '/internal/identity/subjects/42' => ['data' => $this->subject],
-                    default => ['authTokens' => $this->tokens, 'subject' => $this->subject],
+                    default => ['authTokens' => $this->tokens, 'subject' => $this->subject]
+                        + ($this->legacyResponse === null ? [] : ['legacyResponse' => $this->legacyResponse]),
                 }];
             });
         new \yii\web\Application(['id' => 'a1-identity-test', 'basePath' => dirname(__DIR__, 2),
@@ -120,7 +122,7 @@ final class IdentityAuthorityTest extends TestCase
         self::assertSame('refresh', $result['message']);
         self::assertArrayNotHasKey('user', $result);
         self::assertSame('/internal/yii3/refresh', $this->calls[0]['path']);
-        self::assertSame(['refreshToken' => 'old-or-new-refresh', 'allowLoginCode' => false, 'consumer' => 'a1'], $this->calls[0]['payload']);
+        self::assertSame(['refreshToken' => 'old-or-new-refresh', 'allowLoginCode' => false, 'sourceEndpoint' => '/v1/auth/refresh', 'consumer' => 'a1'], $this->calls[0]['payload']);
         self::assertSame('auth-key', $this->calls[0]['headers']['X-Identity-Internal-Token']);
     }
 
@@ -141,6 +143,52 @@ final class IdentityAuthorityTest extends TestCase
         self::assertSame('report success', $result['message']);
         self::assertSame('identity-refresh', $result['user']['token']['refreshToken']);
         self::assertCount(1, $this->calls);
+        self::assertSame('/v1/common/report', $this->calls[0]['payload']['sourceEndpoint']);
+    }
+
+    public function testOldRefreshAndReportBodiesPreserveOriginalJwtNicknameAndDisplayExpiry(): void
+    {
+        $token = ['accessToken' => 'identity-access', 'expires' => '2026-10-12 07:32:11', 'refreshToken' => 'identity-refresh'];
+        $body = ['success' => true, 'message' => 'refresh', 'nickname' => '原昵称', 'token' => $token];
+        $this->legacyResponse = ['version' => 'legacy-refresh-response-v1', 'consumer' => 'a1', 'endpoint' => '/v1/auth/refresh', 'body' => $body];
+        Yii::$app->request->setBodyParams(['refreshToken' => 'old', 'sourceEndpoint' => '/v1/common/report', 'consumer' => 'server']);
+        self::assertSame($body, $this->controller()->actionRefresh());
+        self::assertSame('/v1/auth/refresh', end($this->calls)['payload']['sourceEndpoint']);
+        $body = ['success' => true, 'message' => 'report success', 'user' => ['nickname' => null, 'token' => $token], 'data' => ['watermark' => false]];
+        $this->legacyResponse['endpoint'] = '/v1/common/report'; $this->legacyResponse['body'] = $body;
+        self::assertSame($body, (new CommonController('common', Yii::$app))->actionReport());
+        self::assertSame('/v1/common/report', end($this->calls)['payload']['sourceEndpoint']);
+    }
+
+    public function testLegacyResponseCannotCrossConsumerEndpointOrReplaceTheVerifiedPair(): void
+    {
+        $valid = ['version' => 'legacy-refresh-response-v1', 'consumer' => 'a1', 'endpoint' => '/v1/auth/refresh',
+            'body' => ['success' => true, 'message' => 'refresh', 'nickname' => 'old',
+                'token' => ['accessToken' => 'identity-access', 'expires' => '2026-10-12 20:00:00', 'refreshToken' => 'identity-refresh']]];
+        $variants = [];
+        foreach (['consumer' => 'server', 'endpoint' => '/v1/common/report', 'version' => 'unknown', 'extra' => true] as $key => $value) {
+            $candidate = $valid; $candidate[$key] = $value; $variants[] = $candidate;
+        }
+        $candidate = $valid; $candidate['body']['token']['accessToken'] = 'different-jwt'; $variants[] = $candidate;
+        $candidate = $valid; $candidate['body']['token']['refreshToken'] = 'different-successor'; $variants[] = $candidate;
+        $candidate = $valid; $candidate['body']['token']['expires'] = '2026-02-31 20:00:00'; $variants[] = $candidate;
+        $candidate = $valid; $candidate['body']['user'] = ['id' => 99]; $variants[] = $candidate;
+        Yii::$app->request->setBodyParams(['refreshToken' => 'old']);
+        foreach ($variants as $candidate) {
+            $this->legacyResponse = $candidate;
+            try { $this->controller()->actionRefresh(); self::fail('Malformed legacy body accepted.'); }
+            catch (HttpException $error) { self::assertSame(503, $error->statusCode); }
+        }
+        self::assertCount(count($variants), $this->calls);
+    }
+
+    public function testA1RefreshContextKeepsAll256OpaqueBytesAndRejectsControlCharacters(): void
+    {
+        $key = str_repeat('x', 255) . ' ';
+        $this->client->refresh('old', false, ['idempotencyKey' => $key]);
+        self::assertSame($key, end($this->calls)['headers']['Idempotency-Key']);
+        $this->expectException(RuntimeException::class); $this->expectExceptionCode(400);
+        $this->client->refresh('old', false, ['idempotencyKey' => "opaque\x01key"]);
     }
 
     #[DataProvider('failures')]

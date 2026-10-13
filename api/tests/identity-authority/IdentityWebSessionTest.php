@@ -90,7 +90,7 @@ final class IdentityWebSessionTest extends TestCase
         $this->session->values['__identity_backend_tokens'] = ['accessToken' => 'expired', 'refreshToken' => 'refresh'];
         self::assertSame(42, $this->user()->getIdentity()->id);
         self::assertSame('rotated', $this->session->values['__identity_backend_tokens']['accessToken']);
-        self::assertSame(['refreshToken' => 'refresh', 'allowLoginCode' => false, 'consumer' => 'a1'], $this->calls[1][1]);
+        self::assertSame(['refreshToken' => 'refresh', 'allowLoginCode' => false, 'sourceEndpoint' => '/v1/auth/refresh', 'consumer' => 'a1'], $this->calls[1][1]);
         $this->session->values['__identity_backend_tokens'] = ['accessToken' => 'expired', 'refreshToken' => 'revoked'];
         self::assertNull($this->user()->getIdentity());
         self::assertArrayNotHasKey('__identity_backend_tokens', $this->session->values);

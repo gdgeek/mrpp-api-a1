@@ -46,9 +46,12 @@ final class IdentityAuthorityClient
         return ['authTokens' => $tokens, 'subject' => $this->verifiedSubject($tokens['accessToken'])];
     }
 
-    public function refresh(string $refreshToken, bool $allowLoginCode, array $context = []): array
+    public function refresh(string $refreshToken, bool $allowLoginCode, array $context = [], string $sourceEndpoint = '/v1/auth/refresh'): array
     {
-        return $this->result($this->request('/internal/yii3/refresh', compact('refreshToken', 'allowLoginCode') + ['consumer' => 'a1'], $this->internalToken, context: $context));
+        if ($allowLoginCode || !in_array($sourceEndpoint, ['/v1/auth/refresh', '/v1/common/report'], true)) {
+            throw new RuntimeException('Invalid A1 refresh source.', 503);
+        }
+        return $this->result($this->request('/internal/yii3/refresh', compact('refreshToken', 'allowLoginCode', 'sourceEndpoint') + ['consumer' => 'a1'], $this->internalToken, context: $context), $sourceEndpoint);
     }
 
     public function loginCode(string $key, bool $contextOnly = false, array $context = []): array
@@ -90,10 +93,14 @@ final class IdentityAuthorityClient
         return $subject;
     }
 
-    private function result(array $body): array
+    private function result(array $body, ?string $refreshEndpoint = null): array
     {
         $result = ['authTokens' => $this->tokens($body['authTokens'] ?? []), 'subject' => $this->subject($body['subject'] ?? null)];
         if (array_key_exists('frontendDomain', $body)) $result['frontendDomain'] = $this->frontendDomain($body['frontendDomain']);
+        if (array_key_exists('legacyResponse', $body)) {
+            if ($refreshEndpoint === null) throw new RuntimeException('Unexpected legacy response.', 503);
+            $result['legacyResponseBody'] = LegacyIdentityRefreshResponse::body($body['legacyResponse'], $refreshEndpoint, $result['authTokens']);
+        }
         return $result;
     }
 
@@ -164,8 +171,8 @@ final class IdentityAuthorityClient
         if ($internalToken !== '') $headers['X-Identity-Internal-Token'] = $internalToken;
         foreach (['idempotencyKey' => 'Idempotency-Key', 'userAgent' => 'User-Agent'] as $field => $header) {
             if (!isset($context[$field]) || $context[$field] === '') continue;
-            if (!is_string($context[$field]) || strlen($context[$field]) > ($field === 'idempotencyKey' ? 128 : 4096)
-                || preg_match('/[\r\n\x00]/', $context[$field])) throw new RuntimeException('Authentication request context is invalid.', 400);
+            if (!is_string($context[$field]) || strlen($context[$field]) > ($field === 'idempotencyKey' ? 256 : 4096)
+                || preg_match($field === 'idempotencyKey' ? '/[\x00-\x1f\x7f]/' : '/[\r\n\x00]/', $context[$field])) throw new RuntimeException('Authentication request context is invalid.', 400);
             $headers[$header] = $context[$field];
         }
         try {

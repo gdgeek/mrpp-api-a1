@@ -92,6 +92,10 @@ class IdentityAuthority extends Component implements BootstrapInterface
 
     public static function response(array $result, string $message, bool $includeUser = true): array
     {
+        if (isset($result['legacyResponseBody'])) {
+            if ($message !== 'refresh' || $includeUser) throw new HttpException(503, 'Unexpected legacy response.');
+            return $result['legacyResponseBody'];
+        }
         $subject = $result['subject'];
         $body = ['success' => true, 'message' => $message, 'nickname' => $subject['nickname'], 'token' => $result['authTokens']];
         if ($includeUser) $body['user'] = User::fromIdentitySubject($subject)->toArray();

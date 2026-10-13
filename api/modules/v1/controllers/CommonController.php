@@ -61,6 +61,13 @@ class CommonController extends Controller
     public function actionReport()
     {
         try {
+            if (IdentityAuthority::enabled()) {
+                $raw = IdentityAuthority::credential(Yii::$app->request->post('refreshToken'), 'refreshToken');
+                $result = IdentityAuthority::run(fn() => IdentityAuthority::provider()->refresh($raw, false, IdentityAuthority::requestContext(), '/v1/common/report'));
+                return $result['legacyResponseBody'] ?? ['success' => true, 'message' => 'report success',
+                    'user' => ['nickname' => $result['subject']['nickname'], 'token' => $result['authTokens']],
+                    'data' => ['watermark' => false]];
+            }
             if (!IdentityAuthority::enabled() && LegacyArContinuityAdapter::enabled()) {
                 $raw=IdentityAuthority::credential(Yii::$app->request->post('refreshToken'),'refreshToken');
                 return IdentityAuthority::run(fn()=>LegacyArContinuityAdapter::refresh($raw,'/v1/common/report'));

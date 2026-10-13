@@ -174,6 +174,22 @@ Production environment variables are never used by those test fixtures.
 
 ## Future cutover export/import gate
 
+The independent-mode bridge fixes `consumer=a1` and its source endpoint in
+server code. Auth refresh and common report send distinct endpoint scopes;
+public form fields cannot select the consumer or endpoint. An authenticated
+`legacyResponse` must have the exact version, consumer, endpoint and body
+shape, and its access/refresh values must match the verified `authTokens` pair.
+Original nickname, nullable report nickname and display expiry are returned
+unchanged. The bridge separately receives a standard ISO expiry derived from
+the verified JWT. It never replaces the cached body with current profile data.
+Malformed or cross-scope responses fail with 503 and do not use a second writer.
+Real HTTP and controller tests cover both response envelopes and PHP file-session
+refresh still uses the standard validated pair.
+
+Idempotency headers preserve up to 256 opaque bytes and reject C0/DEL; the
+source HTTP stack determines the actual received header bytes. Stable replay
+keys and complete source backfill remain required before feature enablement.
+
 A future private, reviewed snapshot must have kind/version
 `legacy-ar-refresh-continuity-v1`/1, actual Redis DB/prefix/account source proof,
 complete AR rows, metadata/family/epoch and revocation/tombstone graph, per-
