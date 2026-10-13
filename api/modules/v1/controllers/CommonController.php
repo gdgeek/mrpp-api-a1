@@ -8,6 +8,7 @@ use app\modules\v1\models\User;
 //PlayerToken
 use app\modules\v1\models\PlayerToken;
 use app\components\IdentityAuthority;
+use app\components\LegacyArContinuityAdapter;
 
 class CommonController extends Controller
 {
@@ -60,6 +61,10 @@ class CommonController extends Controller
     public function actionReport()
     {
         try {
+            if (!IdentityAuthority::enabled() && LegacyArContinuityAdapter::enabled()) {
+                $raw=IdentityAuthority::credential(Yii::$app->request->post('refreshToken'),'refreshToken');
+                return IdentityAuthority::run(fn()=>LegacyArContinuityAdapter::refresh($raw,'/v1/common/report'));
+            }
             $user = $this->getUserData();
             return [
                 'success' => true,
@@ -72,7 +77,7 @@ class CommonController extends Controller
         } catch (\Exception $e) {
             // Authority failures must retain their HTTP status and cannot be
             // disguised as a successful response or trigger a local writer.
-            if (IdentityAuthority::enabled()) throw $e;
+            if (IdentityAuthority::enabled() || LegacyArContinuityAdapter::enabled()) throw $e;
 
             return [
                 'success' => false,

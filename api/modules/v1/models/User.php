@@ -7,6 +7,8 @@ use yii\web\IdentityInterface;
 use Yii;
 use OpenApi\Annotations as OA;
 use app\components\IdentityAuthority;
+use app\components\LegacyArContinuityAdapter;
+use app\components\DeviceSnContext;
 
 /**
  * @OA\Schema(
@@ -31,6 +33,8 @@ class User extends \yii\db\ActiveRecord implements IdentityInterface
         return 'user';
     }
     public $password;
+    /** Provenance of a verified bearer identity; never convert SN to a password session. */
+    public array $legacyDeviceSession = [];
 
     public function attributes()
     {
@@ -195,6 +199,9 @@ class User extends \yii\db\ActiveRecord implements IdentityInterface
     public function token()
     {
         IdentityAuthority::forbidLocalCredentials();
+        if (LegacyArContinuityAdapter::enabled()) {
+            return IdentityAuthority::run(fn() => LegacyArContinuityAdapter::issue($this));
+        }
         
         $token = new RefreshToken();
         $token->user_id = $this->id;
@@ -268,6 +275,9 @@ class User extends \yii\db\ActiveRecord implements IdentityInterface
         $claims = Yii::$app->jwt->parse($token)->claims();
         $uid = $claims->get('uid');
         $user = static::findIdentity($uid);
+        if ($user && LegacyArContinuityAdapter::enabled()) {
+            $user->legacyDeviceSession = DeviceSnContext::fromArray($claims->all());
+        }
         return $user;
     }
 

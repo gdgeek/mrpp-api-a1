@@ -21,6 +21,7 @@ class IdentityAuthority extends Component implements BootstrapInterface
         // Include every CompositeAuth site, including v2 and fully qualified uses.
         Yii::$container->set(\bizley\jwt\JwtHttpBearerAuth::class, IdentityJwtHttpBearerAuth::class);
         if (self::enabled()) self::provider();
+        if (LegacyArContinuityAdapter::enabled()) self::run(static fn()=>LegacyArContinuityAdapter::engine());
     }
 
     public static function enabled(): bool

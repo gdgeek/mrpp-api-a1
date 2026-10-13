@@ -8,6 +8,7 @@ use app\modules\v1\models\User;
 use Yii;
 use OpenApi\Annotations as OA;
 use app\components\IdentityAuthority;
+use app\components\LegacyArContinuityAdapter;
 
 /**
  * 认证控制器
@@ -21,7 +22,11 @@ class AuthController extends \yii\rest\Controller
 {
   public function actionLogout()
   {
-    if (!IdentityAuthority::enabled()) throw new \yii\web\NotFoundHttpException();
+    if (!IdentityAuthority::enabled()) {
+      if (!LegacyArContinuityAdapter::enabled()) throw new \yii\web\NotFoundHttpException();
+      $raw=IdentityAuthority::credential(Yii::$app->request->post('refreshToken'),'refreshToken');
+      return IdentityAuthority::run(fn()=>LegacyArContinuityAdapter::logout($raw));
+    }
     $refreshToken = IdentityAuthority::credential(Yii::$app->request->post('refreshToken'), 'refreshToken');
     return IdentityAuthority::run(fn() => IdentityAuthority::provider()->logout($refreshToken));
   }
@@ -71,6 +76,10 @@ class AuthController extends \yii\rest\Controller
       $refreshToken = IdentityAuthority::credential($refreshToken, 'refreshToken');
       $result = IdentityAuthority::run(fn() => IdentityAuthority::provider()->refresh($refreshToken, false, IdentityAuthority::requestContext()));
       return IdentityAuthority::response($result, 'refresh', false);
+    }
+    if (LegacyArContinuityAdapter::enabled()) {
+      $refreshToken=IdentityAuthority::credential($refreshToken,'refreshToken');
+      return IdentityAuthority::run(fn()=>LegacyArContinuityAdapter::refresh($refreshToken,'/v1/auth/refresh'));
     }
     $user = User::findByRefreshToken($refreshToken);
     if (!$user) {
